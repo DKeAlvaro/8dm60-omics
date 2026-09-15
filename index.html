@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8DM60 · Lecture 3 — Omics Models · Study Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Ibarra+Real+Nova:ital,wght@0,400..700;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#e7dfcc; --paper-2:#efe9da; --ink:#1e1a14; --ink-2:#4c453a;
+  --accent:#9b2114; --accent-soft:#b4473a; --line:#c9bfa6; --green:#3f6b3f;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:'Newsreader',Georgia,serif; font-size:18px; line-height:1.6;
+}
+::selection{background:var(--accent);color:var(--paper)}
+
+/* masthead */
+.masthead{border-bottom:3px double var(--ink); padding:2.2rem 1.4rem 1.2rem; text-align:center}
+.masthead .kicker{font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.28em; text-transform:uppercase; color:var(--accent)}
+.masthead h1{font-family:'Ibarra Real Nova',serif; font-size:clamp(2.2rem,6vw,3.6rem); font-weight:600; line-height:1.05; margin:.35rem 0 .5rem}
+.masthead .sub{font-style:italic; color:var(--ink-2); max-width:46rem; margin:0 auto}
+.masthead .meta{font-family:'IBM Plex Mono',monospace; font-size:.7rem; letter-spacing:.14em; color:var(--ink-2); margin-top:1rem; text-transform:uppercase}
+
+/* progress */
+.progress-wrap{position:sticky; top:0; z-index:50; background:var(--paper); border-bottom:1px solid var(--line); padding:.55rem 1.4rem; display:flex; align-items:center; gap:1rem}
+.progress-bar{flex:1; height:6px; background:var(--line); border-radius:3px; overflow:hidden}
+.progress-fill{height:100%; width:0%; background:var(--accent); transition:width .4s ease}
+.progress-label{font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.1em; color:var(--ink-2); white-space:nowrap}
+
+/* nav pills */
+.nav{display:flex; flex-wrap:wrap; gap:.5rem; justify-content:center; padding:1.4rem 1rem .4rem}
+.nav a{font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; text-decoration:none; color:var(--ink-2); border:1px solid var(--line); padding:.35rem .8rem; border-radius:999px; transition:all .2s}
+.nav a:hover{border-color:var(--accent); color:var(--accent)}
+
+main{max-width:52rem; margin:0 auto; padding:1rem 1.2rem 4rem}
+
+/* intro */
+.brief{
+  border:1px solid var(--ink); background:var(--paper-2);
+  padding:1.5rem 1.6rem; margin:2rem 0;
+  box-shadow:6px 6px 0 var(--line);
+}
+.brief h2{font-family:'Ibarra Real Nova',serif; font-size:1.5rem; margin-bottom:.6rem}
+.brief p{margin-bottom:.7rem}
+.brief .q{
+  margin-top:1rem; padding:1rem 1.2rem; border-left:4px solid var(--accent);
+  background:rgba(155,33,20,.06); font-family:'Ibarra Real Nova',serif; font-size:1.15rem; font-style:italic;
+}
+.brief .q strong{color:var(--accent); font-style:normal}
+
+/* sections */
+section.paper{padding:2.6rem 0 1.6rem; border-top:1px solid var(--line)}
+.sec-tag{display:flex; align-items:baseline; gap:.8rem; flex-wrap:wrap}
+.sec-num{font-family:'IBM Plex Mono',monospace; font-size:2.6rem; font-weight:600; color:var(--accent); line-height:1}
+.sec-ctx{font-family:'IBM Plex Mono',monospace; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-2)}
+section.paper h2{font-family:'Ibarra Real Nova',serif; font-size:clamp(1.5rem,4vw,2rem); line-height:1.15; margin:.4rem 0 .15rem}
+.paper-cite{font-size:.95rem; font-style:italic; color:var(--ink-2); margin-bottom:1rem}
+.paper-cite a{color:var(--accent)}
+
+.idea{margin:1rem 0; font-size:1.05rem}
+.idea b{font-weight:600}
+
+/* quote blocks */
+blockquote{
+  border-left:4px solid var(--accent); margin:1.1rem 0; padding:.8rem 1.1rem;
+  background:var(--paper-2); font-size:1.02rem; font-style:italic; color:var(--ink);
+}
+blockquote .who{display:block; margin-top:.4rem; font-style:normal; font-family:'IBM Plex Mono',monospace; font-size:.7rem; letter-spacing:.08em; color:var(--ink-2); text-transform:uppercase}
+
+/* key points list */
+.keys{list-style:none; margin:1rem 0}
+.keys li{position:relative; padding:.45rem 0 .45rem 1.7rem; border-bottom:1px dotted var(--line)}
+.keys li:before{content:"▪"; position:absolute; left:.2rem; color:var(--accent)}
+.keys li b{font-weight:600}
+
+/* exam table */
+table{width:100%; border-collapse:collapse; margin:1.1rem 0; font-size:.92rem}
+th{font-family:'IBM Plex Mono',monospace; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; text-align:left; color:var(--ink-2); border-bottom:2px solid var(--ink); padding:.4rem .5rem}
+td{border-bottom:1px solid var(--line); padding:.45rem .5rem; vertical-align:top}
+td:first-child{font-weight:600; white-space:nowrap}
+
+/* quiz */
+.quiz{border:1px solid var(--ink); background:var(--paper-2); margin:1.4rem 0; box-shadow:4px 4px 0 var(--line)}
+.quiz-head{font-family:'IBM Plex Mono',monospace; font-size:.7rem; letter-spacing:.18em; text-transform:uppercase; background:var(--ink); color:var(--paper); padding:.45rem .9rem; display:flex; justify-content:space-between}
+.quiz-body{padding:1rem 1.1rem}
+.quiz-body .qq{font-family:'Ibarra Real Nova',serif; font-size:1.1rem; margin-bottom:.8rem}
+.opt{display:block; width:100%; text-align:left; font-family:'Newsreader',serif; font-size:.98rem; background:none; border:1px solid var(--line); padding:.55rem .8rem; margin:.35rem 0; cursor:pointer; transition:all .15s; color:var(--ink)}
+.opt:hover{border-color:var(--ink)}
+.opt.correct{background:rgba(63,107,63,.18); border-color:var(--green); font-weight:600}
+.opt.wrong{background:rgba(155,33,20,.12); border-color:var(--accent); text-decoration:line-through}
+.expl{display:none; margin-top:.7rem; padding:.7rem .9rem; border-left:3px solid var(--green); font-size:.95rem; background:rgba(63,107,63,.08)}
+.expl.show{display:block}
+.expl b{color:var(--green)}
+
+/* connections section */
+.connect{display:grid; grid-template-columns:repeat(auto-fit,minmax(15rem,1fr)); gap:1rem; margin:1.2rem 0}
+.connect .c-card{border:1px solid var(--line); padding:1rem; background:var(--paper-2)}
+.connect h3{font-family:'Ibarra Real Nova',serif; font-size:1.1rem; margin-bottom:.4rem}
+.connect p{font-size:.92rem; color:var(--ink-2)}
+
+/* axis sliders / spectrum */
+.spectrum{margin:1.4rem 0}
+.spectrum .labels{display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); margin-bottom:.3rem}
+.spectrum .track{height:2px; background:var(--ink); position:relative; margin:2.2rem 0 2.4rem}
+.spectrum .dot{position:absolute; top:50%; transform:translate(-50%,-50%); width:14px; height:14px; border-radius:50%; background:var(--accent); border:2px solid var(--paper); box-shadow:0 0 0 1px var(--accent)}
+.spectrum .dot span{position:absolute; top:-1.9rem; left:50%; transform:translateX(-50%); font-family:'IBM Plex Mono',monospace; font-size:.66rem; white-space:nowrap; color:var(--accent); font-weight:600}
+
+/* checklist */
+.check{list-style:none; margin:1rem 0}
+.check li{margin:.4rem 0}
+.check label{display:flex; gap:.7rem; align-items:flex-start; cursor:pointer; font-size:1rem}
+.check input{margin-top:.35rem; accent-color:var(--accent); width:1.05rem; height:1.05rem; flex-shrink:0}
+.check input:checked + span{text-decoration:line-through; color:var(--ink-2)}
+
+/* figures */
+figure{margin:1.3rem 0; border:1px solid var(--line); background:#fff; padding:.7rem}
+figure img{width:100%; height:auto; display:block; mix-blend-mode:multiply}
+figcaption{font-family:'IBM Plex Mono',monospace; font-size:.68rem; letter-spacing:.06em; color:var(--ink-2); padding-top:.5rem; border-top:1px dotted var(--line); margin-top:.5rem}
+figcaption a{color:var(--accent)}
+
+/* footer */
+footer{border-top:3px double var(--ink); margin-top:3rem; padding:1.4rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.1em; color:var(--ink-2)}
+footer a{color:var(--accent)}
+
+@media (max-width:600px){
+  body{font-size:16px}
+  .sec-num{font-size:2rem}
+  .progress-label{font-size:.62rem}
+}
+@media print{
+  .progress-wrap,.nav,.quiz{display:none}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="kicker">8DM60 · Multimodal AI in Biomedicine · Lecture 3 · Wed 16 Sep 2026</div>
+  <h1>Omics Models</h1>
+  <p class="sub">From noisy single-cell measurements to representations of cell state, to predicting perturbation responses — and the uncomfortable question of what those predictions actually prove.</p>
+  <div class="meta">6 papers · 1 recurring question · guided self-study reviews vision models</div>
+</header>
+
+<div class="progress-wrap">
+  <span class="progress-label">READING</span>
+  <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+  <span class="progress-label" id="progPct">0%</span>
+</div>
+
+<nav class="nav">
+  <a href="#p1">01 scVI</a>
+  <a href="#p2">02 scGPT</a>
+  <a href="#p3">03 Zero-shot</a>
+  <a href="#p4">04 CPA</a>
+  <a href="#p5">05 GEARS</a>
+  <a href="#p6">06 Baselines</a>
+  <a href="#map">The map</a>
+  <a href="#prep">Prep list</a>
+</nav>
+
+<main>
+
+<div class="brief">
+  <h2>The brief</h2>
+  <p>The lecture is not a survey of architectures. It's a progression: <b>measurement → representation → prediction → evaluation</b>. For each paper you should be able to name the <b>task, data, representation, architecture, objective, training strategy, evaluation setting and assumptions</b>.</p>
+  <div class="q">"What evidence would convince you that a model has learned <strong>transferable biology</strong> rather than statistical regularities in its training data?" <span style="font-style:normal;font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.1em;display:block;margin-top:.4rem;color:var(--ink-2)">— the recurring question of the session</span></div>
+</div>
+
+<!-- ============ 1. scVI ============ -->
+<section class="paper" id="p1">
+  <div class="sec-tag"><span class="sec-num">01</span><span class="sec-ctx">Representing molecular state</span></div>
+  <h2>scVI — deep generative modeling for single-cell transcriptomics</h2>
+  <p class="paper-cite">Lopez et al., <a href="https://www.nature.com/articles/s41592-018-0229-2">Nature Methods 2018</a> · <a href="/8dm60-omics/scVI-deep-generative-single-cell.md">full .md</a></p>
+
+  <p class="idea">The foundational move: treat gene expression as a <b>noisy probabilistic observation</b> of a hidden cell state, and learn that state with a <b>VAE</b>. Everything after this paper builds on the idea of a latent representation of a cell.</p>
+
+  <blockquote>"Transcriptome measurements of individual cells reflect unexplored biological diversity, but are also affected by technical noise and bias. This raises the need to model and account for the resulting uncertainty in any downstream analysis."<span class="who">— Abstract</span></blockquote>
+
+  <ul class="keys">
+    <li><b>Model:</b> hierarchical Bayesian model with conditional distributions specified by deep neural networks — a VAE.</li>
+    <li><b>Generative story:</b> latent vector <i>z</i> (10-dim) + library size + batch → decoder → <b>zero-inflated negative binomial (ZINB)</b> per gene. ZINB captures dropout and over-dispersion.</li>
+    <li><b>Key design choice:</b> it explicitly models the two nuisance factors — <b>library size</b> and <b>batch effects</b> — as separate variables.</li>
+    <li><b>One model, many tasks:</b> batch correction, visualization, clustering, differential expression — all read out of the same latent space.</li>
+    <li><b>Scope:</b> this is <b>representation</b>, not intervention. Nothing here predicts what a cell will do under perturbation.</li>
+  </ul>
+
+  <table>
+    <tr><th>Field</th><th>scVI</th></tr>
+    <tr><td>Task</td><td>Probabilistic representation of scRNA-seq</td></tr>
+    <tr><td>Data</td><td>scRNA-seq count matrices</td></tr>
+    <tr><td>Objective</td><td>ELBO / variational inference</td></tr>
+    <tr><td>Evaluation</td><td>Imputation, clustering vs. annotations, batch removal, likelihood on held-out data</td></tr>
+  </table>
+
+  <figure>
+    <img src="figs/scvi-fig1.jpg" alt="scVI model diagram: variational posterior and generative model with latent space z, size factor, batch, ZINB outputs" loading="lazy">
+    <figcaption>scVI generative model: raw counts + batch → encoder NNs → latent z (10-dim) + size factor → decoder NNs → ZINB expected counts. From <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6289068/">Lopez et al. 2018</a>, Fig 1.</figcaption>
+  </figure>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Check yourself</span><span>Q1</span></div>
+    <div class="quiz-body">
+      <p class="qq">Why does scVI use a zero-inflated negative binomial likelihood instead of a Gaussian?</p>
+      <button class="opt" data-correct>Because scRNA-seq counts are over-dispersed with excess zeros (dropout) and limited sensitivity</button>
+      <button class="opt">Because Gaussian likelihoods cannot be used in variational inference</button>
+      <button class="opt">Because it makes the decoder network linear and easier to train</button>
+      <button class="opt">Because it removes the need for a latent variable</button>
+      <div class="expl"><b>Correct.</b> The generative model must match the measurement process: counts, over-dispersion, dropout, limited sensitivity. scVI "assum[es] a zero-inflated negative binomial distribution, which accounts for the observed over-dispersion and limited sensitivity." This is the lecture's <i>measurement vs. biological state</i> distinction in action.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. scGPT ============ -->
+<section class="paper" id="p2">
+  <div class="sec-tag"><span class="sec-num">02</span><span class="sec-ctx">Large-scale pretrained representations</span></div>
+  <h2>scGPT — a foundation model for single-cell multi-omics</h2>
+  <p class="paper-cite">Cui et al., <a href="https://www.nature.com/articles/s41592-024-02201-0">Nature Methods 2024</a> · <a href="/8dm60-omics/scGPT-foundation-model-single-cell.md">full .md</a></p>
+
+  <p class="idea">The bet: what worked for language works for cells. Treat <b>genes as words</b> and <b>cells as sentences</b>, pretrain a generative transformer on 33M cells, then transfer to many downstream tasks.</p>
+
+  <blockquote>"Drawing parallels between linguistic constructs and cellular biology — where texts comprise words, similarly, cells are defined by genes — our study probes the applicability of foundation models to advance cellular biology and genetics research."<span class="who">— Abstract</span></blockquote>
+
+  <blockquote>"…the construction of a foundation model for single-cell biology, scGPT, which is based on generative pre-trained transformer across a repository of over 33 million cells."<span class="who">— Abstract</span></blockquote>
+
+  <ul class="keys">
+    <li><b>Scale jump:</b> from task-specific VAE (scVI) to <b>generative pretrained transformer</b> trained across 33M+ cells.</li>
+    <li><b>Claimed transfer:</b> cell-type annotation, multi-batch integration, multi-omic integration, <b>genetic perturbation prediction</b>, gene network inference — via fine-tuning.</li>
+    <li><b>The key word is "through further adaptation":</b> performance claims are largely <b>fine-tuned</b>, not zero-shot. Hold that thought for paper 03.</li>
+    <li><b>Assumption to interrogate:</b> does gene–"token" analogy hold? Genes don't appear in a sequence order the way words do; attention over genes is an assumption, not a fact.</li>
+  </ul>
+
+  <table>
+    <tr><th>Field</th><th>scGPT</th></tr>
+    <tr><td>Task</td><td>Pretrained general representation, many downstream tasks</td></tr>
+    <tr><td>Representation</td><td>Gene as token, transformer, value + gene embeddings</td></tr>
+    <tr><td>Objective</td><td>Generative pretraining (masked/next-gene prediction style)</td></tr>
+    <tr><td>Evaluation</td><td>Fine-tuned benchmark performance per task</td></tr>
+  </table>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Check yourself</span><span>Q2</span></div>
+    <div class="quiz-body">
+      <p class="qq">What is the central analogy scGPT relies on, and what is its weakest point?</p>
+      <button class="opt">Cells are like GPUs and genes are like cores; weak point: hardware diversity</button>
+      <button class="opt" data-correct>Genes are words, cells are texts; weak point: gene "order" and grammar are biologically imposed, and pretraining objectives may not capture causal biology</button>
+      <button class="opt">Batches are languages and genes are dialects; weak point: batches are technical, not linguistic</button>
+      <button class="opt">Proteins are sentences and genes are letters; weak point: proteins are 3D, text is 1D</button>
+      <div class="expl"><b>Correct.</b> "where texts comprise words, similarly, cells are defined by genes." The analogy motivates the transformer, but nothing guarantees that self-supervised objectives over 33M cells learn <i>transferable biology</i> — which is exactly what papers 03 and 06 attack.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. Zero-shot ============ -->
+<section class="paper" id="p3">
+  <div class="sec-tag"><span class="sec-num">03</span><span class="sec-ctx">Large-scale pretrained representations · the counterpoint</span></div>
+  <h2>Zero-shot evaluation reveals limitations of single-cell foundation models</h2>
+  <p class="paper-cite">Kedzierska et al., <a href="https://link.springer.com/article/10.1186/s13059-025-03574-x">Genome Biology 2025</a> · <a href="/8dm60-omics/zero-shot-limitations-scFM.md">full .md</a></p>
+
+  <p class="idea">The stress test for paper 02: evaluate scGPT and Geneformer <b>without fine-tuning</b> — the setting where you can't hide behind task-specific adaptation.</p>
+
+  <blockquote>"Our evaluation of the zero-shot performance of Geneformer and scGPT suggests that, in some cases, these models may face reliability challenges and could be outperformed by simpler methods."<span class="who">— Abstract</span></blockquote>
+
+  <blockquote>"…both Geneformer and scGPT underperform simpler methods… zero-shot evaluation of these models exposes vulnerabilities that are not evident if evaluated with fine-tuning alone."<span class="who">— Discussion</span></blockquote>
+
+  <ul class="keys">
+    <li><b>Headline result:</b> in cell-type clustering, <b>selecting highly variable genes (HVG)</b> — a decades-old baseline — outperformed Geneformer and scGPT across all metrics.</li>
+    <li><b>Awkward detail:</b> some evaluation datasets were <i>in the pretraining data</i> (Tabula Sapiens, Immune for scGPT) — and the models <b>still</b> didn't consistently win.</li>
+    <li><b>Scale doesn't save you:</b> "larger pretraining datasets do not always increase the performance of scGPT."</li>
+    <li><b>Lesson for the lecture:</b> evaluation protocol is a design choice that determines the conclusion. Fine-tuned benchmarks ≠ generalizable representations.</li>
+  </ul>
+
+  <table>
+    <tr><th>Field</th><th>Zero-shot eval</th></tr>
+    <tr><td>Task</td><td>Evaluation / benchmarking, not a new model</td></tr>
+    <tr><td>Setting</td><td>No fine-tuning: embeddings used as-is</td></tr>
+    <tr><td>Baselines</td><td>HVG, scVI, Harmony</td></tr>
+    <tr><td>Claim tested</td><td>"Strong capabilities for generalizing to unseen datasets"</td></tr>
+  </table>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Check yourself</span><span>Q3</span></div>
+    <div class="quiz-body">
+      <p class="qq">Why is zero-shot evaluation the "critical setting" for foundation models, per this paper?</p>
+      <button class="opt">Because fine-tuning is illegal in clinical settings</button>
+      <button class="opt" data-correct>Because discovery settings have no labels to fine-tune on — the model must be usable as-is</button>
+      <button class="opt">Because zero-shot training is cheaper than pretraining</button>
+      <button class="opt">Because fine-tuning always overfits so it is never used</button>
+      <div class="expl"><b>Correct.</b> "Understanding the performance of models in zero-shot settings is critical to applications that exclude the ability to fine-tune, such as discovery settings where labels are unknown." Fine-tuned results measure the adapter, zero-shot measures the representation.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. CPA ============ -->
+<section class="paper" id="p4">
+  <div class="sec-tag"><span class="sec-num">04</span><span class="sec-ctx">Predicting perturbation response</span></div>
+  <h2>CPA — compositional perturbation autoencoder</h2>
+  <p class="paper-cite">Lotfollahi et al., <a href="https://www.embopress.org/doi/full/10.15252/msb.202211517">Molecular Systems Biology 2023</a> · <a href="/8dm60-omics/CPA-compositional-perturbation.md">full .md</a></p>
+
+  <p class="idea">The shift from <b>representing states</b> to <b>predicting responses</b>. CPA conditions a latent space on perturbation, dose, and covariates — so you can move a cell <i>in silico</i> to a condition never measured.</p>
+
+  <blockquote>"CPA learns to <i>in silico</i> predict transcriptional perturbation response at the single-cell level for unseen dosages, cell types, time points, and species."<span class="who">— Abstract</span></blockquote>
+
+  <blockquote>"…an exhaustive exploration of the combinatorial perturbation space is experimentally unfeasible. Therefore, computational methods are needed to predict, interpret, and prioritize perturbations."<span class="who">— Abstract</span></blockquote>
+
+  <ul class="keys">
+    <li><b>Architecture:</b> autoencoder with <b>disentangled latent space</b> — separate covariates for perturbation, dose, cell type. Interpretability of linear models + flexibility of deep learning.</li>
+    <li><b>Compositionality:</b> because perturbation effects are latent directions, combinations can be composed — the core trick for predicting unseen combinations.</li>
+    <li><b>Flagship number:</b> imputed <b>5,329 missing combinations (97.6% of all possibilities)</b> in a Perturb-seq experiment in silico.</li>
+    <li><b>Extra flexibility:</b> can ingest <b>chemical representations of drugs</b> → predict responses to completely unseen drugs.</li>
+    <li><b>Assumption to interrogate:</b> linearity/compositionality of effects in latent space. Real biology has epistasis — buffering, synergy (see paper 06).</li>
+  </ul>
+
+  <table>
+    <tr><th>Field</th><th>CPA</th></tr>
+    <tr><td>Task</td><td>Predict perturbation response (drug + genetic)</td></tr>
+    <tr><td>Representation</td><td>Disentangled latent: perturbation, dose, covariates</td></tr>
+    <tr><td>Generalization</td><td>Unseen doses, combinations, cell types, unseen drugs via chemistry</td></tr>
+    <tr><td>Limitation</td><td>Needs the perturbation identity seen in training for genetic combos</td></tr>
+  </table>
+
+  <figure>
+    <img src="figs/cpa-fig1.jpg" alt="CPA latent space UMAP, synergistic and epistatic interaction heatmaps, and in silico perturbation predictions vs measured" loading="lazy">
+    <figcaption>CPA in action: latent space clustering, synergistic (CBL+CNN1) and epistatic (DUSP9+ETS2) interactions, and measured vs. CPA-predicted perturbation responses. From <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10258562/">Lotfollahi et al. 2023</a>, Fig 1.</figcaption>
+  </figure>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Check yourself</span><span>Q4</span></div>
+    <div class="quiz-body">
+      <p class="qq">What makes CPA's perturbation prediction "compositional", and what does it buy?</p>
+      <button class="opt">It trains one separate model per perturbation combination, so each is specialized</button>
+      <button class="opt" data-correct>Perturbations are latent directions/deltas that can be combined, enabling prediction of unseen combinations</button>
+      <button class="opt">It converts perturbations into images and uses a vision transformer</button>
+      <button class="opt">It composes multiple single-cell datasets into one big atlas</button>
+      <div class="expl"><b>Correct.</b> "Multiple perturbations as compositional processes in gene expression latent space" — each perturbation contributes a direction; combinations are compositions. That's how it imputes 97.6% of missing combinations in silico. But note paper 06's challenge: additive composition is exactly what fails for buffering/synergy interactions.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. GEARS ============ -->
+<section class="paper" id="p5">
+  <div class="sec-tag"><span class="sec-num">05</span><span class="sec-ctx">Predicting perturbation response · biology as prior</span></div>
+  <h2>GEARS — predicting responses of novel multigene perturbations</h2>
+  <p class="paper-cite">Roohani et al., <a href="https://www.nature.com/articles/s41587-023-01905-6">Nature Biotechnology 2024</a> · <a href="/8dm60-omics/GEARS-perturbation-prediction.md">full .md</a></p>
+
+  <p class="idea">The other answer to the extrapolation problem: instead of pure data scale, inject <b>prior biological knowledge</b> (gene co-expression graph + Gene Ontology) as an inductive bias via a GNN. Predict perturbations of genes <b>never perturbed in training</b>.</p>
+
+  <blockquote>"GEARS is uniquely able to predict the outcomes of perturbation sets that involve one or more genes for which there are no experimental perturbation data."<span class="who">— Results</span></blockquote>
+
+  <blockquote>"This relies on two biological intuitions: (i) genes that share similar expression patterns should likely respond similarly to external perturbations, and (ii) genes that are involved in similar pathways should impact the expression of similar genes after perturbation."<span class="who">— Results</span></blockquote>
+
+  <ul class="keys">
+    <li><b>Architecture:</b> separate gene + perturbation embeddings combined through a <b>graph neural network</b> over knowledge graphs; predicts per-gene post-perturbation state.</li>
+    <li><b>Two intuitions → two graphs:</b> co-expression graph for gene embeddings, GO-derived graph for perturbation embeddings.</li>
+    <li><b>Numbers:</b> 30–50% MSE improvement over baselines on top-20 DE genes; up to <b>53% improvement</b> when both genes of a combination are unseen; >2× Pearson on all genes.</li>
+    <li><b>Generalization classes:</b> 0, 1, or 2 unseen genes in a two-gene perturbation — a clean taxonomy of how hard the extrapolation is.</li>
+    <li><b>Scope note:</b> here the perturbation is a <b>gene knock-out/knock-down</b>, not a drug. The perturbation embedding is defined because genes have known relationships.</li>
+  </ul>
+
+  <table>
+    <tr><th>Field</th><th>GEARS</th></tr>
+    <tr><td>Task</td><td>Transcriptional outcome of single/multi-gene perturbation</td></tr>
+    <tr><td>Prior knowledge</td><td>Co-expression graph + Gene Ontology graph (GNN)</td></tr>
+    <tr><td>Generalization</td><td>Unseen genes (1 or 2 of 2), new regions of perturbation space</td></tr>
+    <tr><td>Evaluation</td><td>MSE top-20 DE, Pearson, DE enrichment, interaction subtypes</td></tr>
+  </table>
+
+  <figure>
+    <img src="figs/gears-fig1.jpg" alt="GEARS model: gene and perturbation embeddings combined through knowledge-graph GNN to predict post-perturbation expression" loading="lazy">
+    <figcaption>GEARS model schematic: gene + perturbation embeddings, co-expression and GO knowledge graphs, GNN decoder. From <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11180609/">Roohani et al. 2024</a>, Fig 1.</figcaption>
+  </figure>
+  <figure>
+    <img src="figs/gears-fig2.jpg" alt="GEARS results: one-gene and two-gene perturbation performance, generalization classes with 0/1/2 unseen genes, FOSB+CEBPB example" loading="lazy">
+    <figcaption>GEARS results: note panel e-f — the 0/1/2-unseen generalization classes, with −32.4% / −47.2% / −53.8% MSE. From <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11180609/">Roohani et al. 2024</a>, Fig 2.</figcaption>
+  </figure>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Check yourself</span><span>Q5</span></div>
+    <div class="quiz-body">
+      <p class="qq">GEARS can predict perturbations of genes never perturbed in training. What enables this?</p>
+      <button class="opt">Massive data augmentation with random expression profiles</button>
+      <button class="opt">It just predicts "no change" for unseen genes, which is usually accurate</button>
+      <button class="opt" data-correct>Knowledge graphs (co-expression + GO) let embeddings transfer from similar, previously perturbed genes to unseen ones</button>
+      <button class="opt">It sequences the perturbed gene's DNA at inference time</button>
+      <div class="expl"><b>Correct.</b> Genes involved in similar pathways "should impact the expression of similar genes after perturbation" — the GO graph places an unseen gene near seen ones, so its perturbation embedding can be inferred. This is the lecture's <i>data scale vs. biological priors</i> axis: GEARS bets on priors.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. Baselines ============ -->
+<section class="paper" id="p6">
+  <div class="sec-tag"><span class="sec-num">06</span><span class="sec-ctx">What does good prediction actually mean?</span></div>
+  <h2>Deep-learning perturbation prediction does not yet outperform simple linear baselines</h2>
+  <p class="paper-cite">Ahlmann-Eltze, Huber &amp; Anders, <a href="https://www.nature.com/articles/s41592-025-02772-6">Nature Methods 2025</a> · <a href="/8dm60-omics/linear-baselines-vs-DL-perturbation.md">full .md</a></p>
+
+  <p class="idea">The reality check — and the paper most likely to fuel the discussion round. Run 5 foundation models + 2 deep learning models against <b>"no change"</b> and <b>"additive"</b> baselines, and a simple linear model. Result: nothing beats them consistently.</p>
+
+  <blockquote>"Here we compared five foundation models and two other deep learning models against deliberately simple baselines for predicting transcriptome changes after single or double perturbations. None outperformed the baselines, which highlights the importance of critical benchmarking in directing and evaluating method development."<span class="who">— Abstract</span></blockquote>
+
+  <blockquote>"None of the models was better than the 'no change' baseline."<span class="who">— Results (double perturbations)</span></blockquote>
+
+  <blockquote>"As our deliberately simple baselines are incapable of representing realistic biological complexity, yet were not outperformed by the foundation models, we conclude that the latter's goal of providing…"<span class="who">— Summary (cut short deliberately: find the ending)</span></blockquote>
+
+  <ul class="keys">
+    <li><b>The two baselines:</b> <b>"no change"</b> (predict control expression) and <b>"additive"</b> (sum of individual log fold-changes). Neither uses the double-perturbation data.</li>
+    <li><b>Devastating detail:</b> for most genes, predictions of scGPT, UCE and scBERT <b>did not vary across perturbations</b> — they had learned to predict ≈ control.</li>
+    <li><b>Synergy is rare and mostly wrong:</b> DL models rarely predicted synergistic interactions, and "it was even rarer that those predictions were correct."</li>
+    <li><b>Embedding recycling:</b> a <b>linear model with pretrained embeddings</b> (from scGPT/scFoundation/GEARS) performed as well or better than the full models — the representations have some value, the decoders don't add much.</li>
+    <li><b>What did work:</b> a linear model with perturbation embeddings <b>pretrained on perturbation data</b> (cross cell-line). Pretraining on the atlas gave only "a small benefit over random embeddings."</li>
+  </ul>
+
+  <table>
+    <tr><th>Field</th><th>Baselines paper</th></tr>
+    <tr><td>Task</td><td>Critical benchmarking of 7 DL models</td></tr>
+    <tr><td>Data</td><td>Norman (doubles), Adamson, Replogle K562/RPE1 (singles)</td></tr>
+    <tr><td>Baselines</td><td>No change, additive LFC, linear model (G·W·P)</td></tr>
+    <tr><td>Verdict</td><td>No DL model consistently beats simple baselines</td></tr>
+  </table>
+
+  <figure>
+    <img src="figs/baselines-fig1.jpg" alt="Baselines paper Fig 1: double perturbation prediction error beeswarm showing no-change baseline beating all DL models, interaction prediction accuracy" loading="lazy">
+    <figcaption>The kill shot, panel a: prediction error for 62 double perturbations — the <b>no change</b> baseline (leftmost) has lower mean error (red line) than every foundation model and every deep learning model. From <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12328236/">Ahlmann-Eltze et al. 2025</a>, Fig 1.</figcaption>
+  </figure>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Check yourself</span><span>Q6</span></div>
+    <div class="quiz-body">
+      <p class="qq">Which result most strongly suggests the foundation models learned statistical regularities rather than biology?</p>
+      <button class="opt">They required GPUs to fine-tune while the linear model ran on CPU</button>
+      <button class="opt">Their predictions were sometimes outside the range of observed expression</button>
+      <button class="opt" data-correct>For most genes their predictions barely varied across perturbations — effectively predicting "no change"</button>
+      <button class="opt">They were trained on datasets that included the test perturbations</button>
+      <div class="expl"><b>Correct.</b> "for most genes, the predictions of scGPT, UCE and scBERT did not vary across perturbations" — matching the strongest baseline ('no change') is the signature of a model that has learned the prior distribution of expression, not the response to intervention. This is the lecture's core question made concrete.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MAP ============ -->
+<section class="paper" id="map">
+  <div class="sec-tag"><span class="sec-num">§</span><span class="sec-ctx">In-class focus</span></div>
+  <h2>The map: five axes to argue about</h2>
+  <p class="idea">The six papers are positions on axes, not islands. Where each sits:</p>
+
+  <div class="spectrum">
+    <div class="track">
+      <div class="dot" style="left:8%"><span>scVI</span></div>
+      <div class="dot" style="left:70%"><span>scGPT</span></div>
+    </div>
+    <div class="labels"><span>Task-specific model</span><span>Foundation model (scale)</span></div>
+  </div>
+
+  <div class="spectrum">
+    <div class="track">
+      <div class="dot" style="left:88%"><span>GEARS</span></div>
+      <div class="dot" style="left:30%"><span>scGPT / CPA</span></div>
+    </div>
+    <div class="labels"><span>Biological priors (GO, graphs)</span><span>Data-driven</span></div>
+  </div>
+
+  <div class="spectrum">
+    <div class="track">
+      <div class="dot" style="left:12%"><span>scVI</span></div>
+      <div class="dot" style="left:62%"><span>CPA</span></div>
+      <div class="dot" style="left:90%"><span>GEARS</span></div>
+    </div>
+    <div class="labels"><span>Represent states</span><span>Predict transitions/responses</span></div>
+  </div>
+
+  <div class="spectrum">
+    <div class="track">
+      <div class="dot" style="left:20%"><span>CPA unseen dose</span></div>
+      <div class="dot" style="left:65%"><span>CPA unseen combo</span></div>
+      <div class="dot" style="left:92%"><span>GEARS unseen gene</span></div>
+    </div>
+    <div class="labels"><span>Interpolation</span><span>Extrapolation</span></div>
+  </div>
+
+  <div class="spectrum">
+    <div class="track">
+      <div class="dot" style="left:4%"><span>Baselines paper</span></div>
+      <div class="dot" style="left:75%"><span>papers' own benchmarks</span></div>
+    </div>
+    <div class="labels"><span>Simple baselines, held-out rigor</span><span>Benchmark performance claims</span></div>
+  </div>
+
+  <div class="connect">
+    <div class="c-card"><h3>Measurement vs. state</h3><p>scVI exists because measurements are noisy and partial. Batch effects are technical, not biological — a model must separate them or it learns the instrument.</p></div>
+    <div class="c-card"><h3>Representation ≠ prediction</h3><p>A latent space good for clustering (scVI, scGPT zero-shot) need not contain the information needed to predict an intervention's effect. Paper 03 shows the first failing; paper 06 the second.</p></div>
+    <div class="c-card"><h3>Generate vs. predict</h3><p>Reconstructing plausible measurements (scVI sampling, scGPT generation) is a weaker claim than predicting an unobserved biological response. They need different validation.</p></div>
+    <div class="c-card"><h3>Interpolation vs. extrapolation</h3><p>Always ask <i>what was held out</i>: new cells? new dose? new combination? new gene? Each step right on axis 4 is a stronger claim and needs stronger evidence.</p></div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Check yourself</span><span>Q7 · synthesis</span></div>
+    <div class="quiz-body">
+      <p class="qq">Paper 06's linear model with pretrained embeddings matched the full deep learning models. What does this imply?</p>
+      <button class="opt">Pretraining is useless and should be abandoned in single-cell biology</button>
+      <button class="opt" data-correct>The value may live in the learned representations (embeddings), while the complex decoders add little for these tasks — so evaluate the parts separately</button>
+      <button class="opt">Linear models secretly contain transformer attention mechanisms</button>
+      <button class="opt">The benchmarks were too easy, so every model trivially succeeded</button>
+      <div class="expl"><b>Correct.</b> "The above linear model, equipped with these embeddings, performed as well or better than scGPT and GEARS with their in-built decoders." And pretraining on perturbation data (not the atlas) is what actually helped: "pretraining on the single-cell atlas data provided only a small benefit over random embeddings."</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PREP ============ -->
+<section class="paper" id="prep">
+  <div class="sec-tag"><span class="sec-num">✓</span><span class="sec-ctx">Bring short notes on</span></div>
+  <h2>Prep checklist</h2>
+  <ul class="check">
+    <li><label><input type="checkbox"><span>Can state, for each paper: task, data, representation, architecture, objective, training strategy, evaluation, assumptions.</span></label></li>
+    <li><label><input type="checkbox"><span>scVI: can explain ZINB likelihood, batch/library-size disentanglement, and why it's representation-only.</span></label></li>
+    <li><label><input type="checkbox"><span>scGPT: can explain the gene-as-token analogy and note that headline results are fine-tuned.</span></label></li>
+    <li><label><input type="checkbox"><span>Zero-shot: can cite HVG beating both foundation models, and the pretraining-overlap caveat.</span></label></li>
+    <li><label><input type="checkbox"><span>CPA: can explain disentangled latent space, compositionality, and the 97.6% imputation claim.</span></label></li>
+    <li><label><input type="checkbox"><span>GEARS: can name the two knowledge graphs and the two biological intuitions behind them.</span></label></li>
+    <li><label><input type="checkbox"><span>Baselines: can reproduce the "no change beats everything" argument and the non-varying-predictions evidence.</span></label></li>
+    <li><label><input type="checkbox"><span>Have a 2-minute answer ready for the recurring question: what evidence would convince you a model learned transferable biology?</span></label></li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  8DM60 · Omics Models · built for the Wed 16 Sep session ·
+  <a href="https://github.com/tueimage/8dm60-multimodal-ai">course repo</a>
+</footer>
+
+<script>
+// quiz
+document.querySelectorAll('[data-quiz]').forEach(function(q){
+  var opts=q.querySelectorAll('.opt'), expl=q.querySelector('.expl'), done=false;
+  opts.forEach(function(o){
+    o.addEventListener('click',function(){
+      if(done){return} done=true;
+      if(o.hasAttribute('data-correct')){o.classList.add('correct');}
+      else{o.classList.add('wrong'); opts.forEach(function(x){if(x.hasAttribute('data-correct'))x.classList.add('correct');});}
+      if(expl)expl.classList.add('show');
+    });
+  });
+});
+// reading progress
+var secs=[].slice.call(document.querySelectorAll('section.paper'));
+var fill=document.getElementById('progFill'), pct=document.getElementById('progPct');
+function upd(){
+  var seen=0;
+  secs.forEach(function(s){ if(s.getBoundingClientRect().top < window.innerHeight*0.55) seen++; });
+  var p=Math.round(seen/secs.length*100);
+  fill.style.width=p+'%'; pct.textContent=p+'%';
+}
+window.addEventListener('scroll',upd,{passive:true}); upd();
+</script>
+</body>
+</html>
