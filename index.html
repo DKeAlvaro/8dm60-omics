@@ -172,20 +172,39 @@ footer a{color:var(--accent)}
   <div class="q">"What evidence would convince you that a model has learned <strong>transferable biology</strong> rather than statistical regularities in its training data?" <span style="font-style:normal;font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.1em;display:block;margin-top:.4rem;color:var(--ink-2)">— the recurring question of the session</span></div>
 </div>
 
+<div class="brief">
+  <h2>Mini-glossary (the terms the papers assume)</h2>
+  <table>
+    <tr><th>Term</th><th>Plain meaning</th></tr>
+    <tr><td>scRNA-seq</td><td>Single-cell RNA sequencing: measures the expression level of ~20,000 genes in one individual cell, as counts.</td></tr>
+    <tr><td>Gene expression</td><td>How active a gene is in a cell — how much of its protein recipe is being transcribed.</td></tr>
+    <tr><td>Perturbation</td><td>Deliberately interfering with a gene (CRISPR knock-out) or adding a drug, and observing what changes.</td></tr>
+    <tr><td>Latent space / embedding</td><td>A learned compressed vector representing something complex (a cell, a gene) so that similar things are close together.</td></tr>
+    <tr><td>Batch effect</td><td>Systematic technical differences between groups of cells processed separately (different day, machine, protocol) — noise that is not biology.</td></tr>
+    <tr><td>Fine-tuning vs zero-shot</td><td>Fine-tuning: continue training a pretrained model on your labeled task. Zero-shot: use it as-is, no task-specific training.</td></tr>
+    <tr><td>Foundation model</td><td>One large model pretrained once on lots of unlabeled data (like GPT), then adapted to many tasks.</td></tr>
+    <tr><td>DE genes</td><td>Differentially expressed genes: the ones whose expression actually changes between conditions — the interesting ones.</td></tr>
+    <tr><td>CRISPR</td><td>Gene-editing tool used to deliberately disable a specific gene in cells.</td></tr>
+    <tr><td>GO (Gene Ontology)</td><td>A curated public database describing what genes do and which pathways they belong to.</td></tr>
+  </table>
+</div>
+
 <!-- ============ 1. scVI ============ -->
 <section class="paper" id="p1">
   <div class="sec-tag"><span class="sec-num">01</span><span class="sec-ctx">Representing molecular state</span></div>
   <h2>scVI — deep generative modeling for single-cell transcriptomics</h2>
   <p class="paper-cite">Lopez et al., <a href="https://www.nature.com/articles/s41592-018-0229-2">Nature Methods 2018</a> · <a href="/8dm60-omics/scVI-deep-generative-single-cell.md">full .md</a></p>
 
-  <p class="idea">The foundational move: treat gene expression as a <b>noisy probabilistic observation</b> of a hidden cell state, and learn that state with a <b>VAE</b>. Everything after this paper builds on the idea of a latent representation of a cell.</p>
+  <p class="idea">First, the biology in one breath: a <b>gene</b> is a recipe for making a protein; <b>gene expression</b> is how active that recipe is in a given cell; and <b>single-cell RNA-seq (scRNA-seq)</b> is the technology that measures the activity of ~20,000 genes in <i>one single cell at a time</i>, producing a count vector. A <b>perturbation</b> is deliberately breaking one gene (e.g. CRISPR knock-out) or adding a drug, to see what changes.</p>
+
+  <p class="idea">The foundational move of this paper: treat gene expression as a <b>noisy probabilistic observation</b> of a hidden cell state, and learn that state with a <b>VAE (variational autoencoder)</b> — a neural network that compresses each cell's 20,000-dim count vector into a small vector (here 10 numbers) that captures the essentials, then learns to reconstruct the counts back from it. Everything after this paper builds on the idea of a <b>latent representation</b> of a cell: a learned, compressed summary of its state.</p>
 
   <blockquote>"Transcriptome measurements of individual cells reflect unexplored biological diversity, but are also affected by technical noise and bias. This raises the need to model and account for the resulting uncertainty in any downstream analysis."<span class="who">— Abstract</span></blockquote>
 
   <ul class="keys">
-    <li><b>Model:</b> hierarchical Bayesian model with conditional distributions specified by deep neural networks — a VAE.</li>
-    <li><b>Generative story:</b> latent vector <i>z</i> (10-dim) + library size + batch → decoder → <b>zero-inflated negative binomial (ZINB)</b> per gene. ZINB captures dropout and over-dispersion.</li>
-    <li><b>Key design choice:</b> it explicitly models the two nuisance factors — <b>library size</b> and <b>batch effects</b> — as separate variables.</li>
+    <li><b>Model:</b> a VAE — an encoder network compresses each cell into a 10-dim latent vector, a decoder network reconstructs expression from it.</li>
+    <li><b>Generative story:</b> latent vector <i>z</i> + library size + batch → decoder → <b>zero-inflated negative binomial (ZINB)</b> distribution per gene. In plain terms: scRNA-seq counts are not bell-curve-like — they're sparse (most genes read as 0 in any given cell, the <i>dropout</i> problem), skewed, and over-dispersed. ZINB is a statistical distribution built for exactly that shape; a plain Gaussian would be the wrong tool.</li>
+    <li><b>Key design choice:</b> it explicitly models the two <b>nuisance factors</b> — technical artifacts, not biology — as separate variables: <b>library size</b> (how deeply a cell was sequenced; more reads ≠ more expression) and <b>batch effects</b> (cells processed on different days/machines/protocols shift systematically for technical reasons).</li>
     <li><b>One model, many tasks:</b> batch correction, visualization, clustering, differential expression — all read out of the same latent space.</li>
     <li><b>Scope:</b> this is <b>representation</b>, not intervention. Nothing here predicts what a cell will do under perturbation.</li>
   </ul>
@@ -194,8 +213,8 @@ footer a{color:var(--accent)}
     <tr><th>Field</th><th>scVI</th></tr>
     <tr><td>Task</td><td>Probabilistic representation of scRNA-seq</td></tr>
     <tr><td>Data</td><td>scRNA-seq count matrices</td></tr>
-    <tr><td>Objective</td><td>ELBO / variational inference</td></tr>
-    <tr><td>Evaluation</td><td>Imputation, clustering vs. annotations, batch removal, likelihood on held-out data</td></tr>
+    <tr><td>Objective</td><td>ELBO / variational inference — the standard VAE training loss: reconstruct the data well while keeping the latent space smooth</td></tr>
+    <tr><td>Evaluation</td><td>Imputation (predict masked values), clustering vs. known cell-type annotations, batch removal, likelihood on held-out data</td></tr>
   </table>
 
   <figure>
@@ -222,6 +241,8 @@ footer a{color:var(--accent)}
   <h2>scGPT — a foundation model for single-cell multi-omics</h2>
   <p class="paper-cite">Cui et al., <a href="https://www.nature.com/articles/s41592-024-02201-0">Nature Methods 2024</a> · <a href="/8dm60-omics/scGPT-foundation-model-single-cell.md">full .md</a></p>
 
+  <p class="idea">Recap of what you need: a <b>transformer</b> is the architecture behind LLMs — it processes a sequence of tokens (words) using self-attention, so each token can gather information from all others. <b>Pretraining</b> means training it on a huge corpus with a self-supervised objective (predict masked pieces), then adapting it to specific tasks later. scGPT applies exactly this recipe to cells.</p>
+
   <p class="idea">The bet: what worked for language works for cells. Treat <b>genes as words</b> and <b>cells as sentences</b>, pretrain a generative transformer on 33M cells, then transfer to many downstream tasks.</p>
 
   <blockquote>"Drawing parallels between linguistic constructs and cellular biology — where texts comprise words, similarly, cells are defined by genes — our study probes the applicability of foundation models to advance cellular biology and genetics research."<span class="who">— Abstract</span></blockquote>
@@ -229,7 +250,7 @@ footer a{color:var(--accent)}
   <blockquote>"…the construction of a foundation model for single-cell biology, scGPT, which is based on generative pre-trained transformer across a repository of over 33 million cells."<span class="who">— Abstract</span></blockquote>
 
   <ul class="keys">
-    <li><b>Scale jump:</b> from task-specific VAE (scVI) to <b>generative pretrained transformer</b> trained across 33M+ cells.</li>
+    <li><b>Scale jump:</b> from task-specific VAE (scVI) to a <b>foundation model</b> — the same idea as GPT: one large model pretrained once on lots of unlabeled data, then adapted to many tasks instead of training from scratch each time.</li>
     <li><b>Claimed transfer:</b> cell-type annotation, multi-batch integration, multi-omic integration, <b>genetic perturbation prediction</b>, gene network inference — via fine-tuning.</li>
     <li><b>The key word is "through further adaptation":</b> performance claims are largely <b>fine-tuned</b>, not zero-shot. Hold that thought for paper 03.</li>
     <li><b>Assumption to interrogate:</b> does gene–"token" analogy hold? Genes don't appear in a sequence order the way words do; attention over genes is an assumption, not a fact.</li>
@@ -262,14 +283,14 @@ footer a{color:var(--accent)}
   <h2>Zero-shot evaluation reveals limitations of single-cell foundation models</h2>
   <p class="paper-cite">Kedzierska et al., <a href="https://link.springer.com/article/10.1186/s13059-025-03574-x">Genome Biology 2025</a> · <a href="/8dm60-omics/zero-shot-limitations-scFM.md">full .md</a></p>
 
-  <p class="idea">The stress test for paper 02: evaluate scGPT and Geneformer <b>without fine-tuning</b> — the setting where you can't hide behind task-specific adaptation.</p>
+  <p class="idea"><b>Zero-shot</b> means using a model directly after pretraining, with <b>no fine-tuning</b> — no task-specific training on labeled examples. Why care? Because in a real discovery experiment you often have no labels to fine-tune on. The stress test for paper 02: evaluate scGPT and <b>Geneformer</b> (another single-cell foundation model, pretrained by masking gene values — the BERT recipe instead of GPT) zero-shot and see if the representations are actually good.</p>
 
   <blockquote>"Our evaluation of the zero-shot performance of Geneformer and scGPT suggests that, in some cases, these models may face reliability challenges and could be outperformed by simpler methods."<span class="who">— Abstract</span></blockquote>
 
   <blockquote>"…both Geneformer and scGPT underperform simpler methods… zero-shot evaluation of these models exposes vulnerabilities that are not evident if evaluated with fine-tuning alone."<span class="who">— Discussion</span></blockquote>
 
   <ul class="keys">
-    <li><b>Headline result:</b> in cell-type clustering, <b>selecting highly variable genes (HVG)</b> — a decades-old baseline — outperformed Geneformer and scGPT across all metrics.</li>
+    <li><b>Headline result:</b> in cell-type clustering, <b>HVG (highly variable genes)</b> — the decades-old baseline of just picking the ~2000 genes with the most variation across cells and clustering on those, no model at all — outperformed Geneformer and scGPT across all metrics.</li>
     <li><b>Awkward detail:</b> some evaluation datasets were <i>in the pretraining data</i> (Tabula Sapiens, Immune for scGPT) — and the models <b>still</b> didn't consistently win.</li>
     <li><b>Scale doesn't save you:</b> "larger pretraining datasets do not always increase the performance of scGPT."</li>
     <li><b>Lesson for the lecture:</b> evaluation protocol is a design choice that determines the conclusion. Fine-tuned benchmarks ≠ generalizable representations.</li>
@@ -279,7 +300,7 @@ footer a{color:var(--accent)}
     <tr><th>Field</th><th>Zero-shot eval</th></tr>
     <tr><td>Task</td><td>Evaluation / benchmarking, not a new model</td></tr>
     <tr><td>Setting</td><td>No fine-tuning: embeddings used as-is</td></tr>
-    <tr><td>Baselines</td><td>HVG, scVI, Harmony</td></tr>
+    <tr><td>Baselines</td><td>HVG, scVI, Harmony (a classic batch-correction method)</td></tr>
     <tr><td>Claim tested</td><td>"Strong capabilities for generalizing to unseen datasets"</td></tr>
   </table>
 
@@ -302,18 +323,20 @@ footer a{color:var(--accent)}
   <h2>CPA — compositional perturbation autoencoder</h2>
   <p class="paper-cite">Lotfollahi et al., <a href="https://www.embopress.org/doi/full/10.15252/msb.202211517">Molecular Systems Biology 2023</a> · <a href="/8dm60-omics/CPA-compositional-perturbation.md">full .md</a></p>
 
-  <p class="idea">The shift from <b>representing states</b> to <b>predicting responses</b>. CPA conditions a latent space on perturbation, dose, and covariates — so you can move a cell <i>in silico</i> to a condition never measured.</p>
+  <p class="idea">The shift from <b>representing states</b> to <b>predicting responses</b>. <i>In silico</i> means predicted by computer rather than measured in the lab. CPA conditions a latent space on perturbation, dose, and covariates — so you can move a cell <i>in silico</i> to a condition never measured.</p>
+
+  <p class="idea">Why this matters practically: you can't test all drug combinations in the lab. With 100 drugs you have ~5,000 pairs; with perturb-seq-style experiments (measuring single cells after a genetic perturbation) the combinatorial space explodes. If a model can predict what an untested combination does, you only test the promising ones.</p>
 
   <blockquote>"CPA learns to <i>in silico</i> predict transcriptional perturbation response at the single-cell level for unseen dosages, cell types, time points, and species."<span class="who">— Abstract</span></blockquote>
 
   <blockquote>"…an exhaustive exploration of the combinatorial perturbation space is experimentally unfeasible. Therefore, computational methods are needed to predict, interpret, and prioritize perturbations."<span class="who">— Abstract</span></blockquote>
 
   <ul class="keys">
-    <li><b>Architecture:</b> autoencoder with <b>disentangled latent space</b> — separate covariates for perturbation, dose, cell type. Interpretability of linear models + flexibility of deep learning.</li>
-    <li><b>Compositionality:</b> because perturbation effects are latent directions, combinations can be composed — the core trick for predicting unseen combinations.</li>
-    <li><b>Flagship number:</b> imputed <b>5,329 missing combinations (97.6% of all possibilities)</b> in a Perturb-seq experiment in silico.</li>
+    <li><b>Architecture:</b> autoencoder with a <b>disentangled latent space</b> — the latent vector is split into separate pieces, one per factor: a piece for the perturbation, one for the dose, one for the cell type. "Disentangled" = each piece controls one factor independently, so you can swap the perturbation piece while keeping the rest.</li>
+    <li><b>Compositionality:</b> because each perturbation is a direction (a delta) in latent space, two perturbations can be combined by adding their directions — the core trick for predicting unseen combinations.</li>
+    <li><b>Flagship number:</b> imputed <b>5,329 missing combinations (97.6% of all possibilities)</b> in a <b>Perturb-seq</b> experiment (a technology that reads out gene expression cell-by-cell after CRISPR perturbations) in silico.</li>
     <li><b>Extra flexibility:</b> can ingest <b>chemical representations of drugs</b> → predict responses to completely unseen drugs.</li>
-    <li><b>Assumption to interrogate:</b> linearity/compositionality of effects in latent space. Real biology has epistasis — buffering, synergy (see paper 06).</li>
+    <li><b>Assumption to interrogate:</b> additivity of effects in latent space. Real biology has <b>epistasis</b> — interactions where the combined effect is <i>not</i> the sum of the parts: <b>buffering</b> (one perturbation cancels the other) and <b>synergy</b> (together they do far more than the sum). See paper 06.</li>
   </ul>
 
   <table>
@@ -325,7 +348,7 @@ footer a{color:var(--accent)}
   </table>
 
   <figure>
-    <img src="figs/cpa-fig1.jpg" alt="CPA latent space UMAP, synergistic and epistatic interaction heatmaps, and in silico perturbation predictions vs measured" loading="lazy">
+    <img src="figs/cpa-fig1.jpg" alt="CPA latent space (UMAP = a 2D projection of the latent space for visualization), synergistic and epistatic interaction heatmaps, and in silico perturbation predictions vs measured" loading="lazy">
     <figcaption>CPA in action: latent space clustering, synergistic (CBL+CNN1) and epistatic (DUSP9+ETS2) interactions, and measured vs. CPA-predicted perturbation responses. From <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10258562/">Lotfollahi et al. 2023</a>, Fig 1.</figcaption>
   </figure>
 
@@ -348,16 +371,16 @@ footer a{color:var(--accent)}
   <h2>GEARS — predicting responses of novel multigene perturbations</h2>
   <p class="paper-cite">Roohani et al., <a href="https://www.nature.com/articles/s41587-023-01905-6">Nature Biotechnology 2024</a> · <a href="/8dm60-omics/GEARS-perturbation-prediction.md">full .md</a></p>
 
-  <p class="idea">The other answer to the extrapolation problem: instead of pure data scale, inject <b>prior biological knowledge</b> (gene co-expression graph + Gene Ontology) as an inductive bias via a GNN. Predict perturbations of genes <b>never perturbed in training</b>.</p>
+  <p class="idea">The other answer to the extrapolation problem: instead of pure data scale, inject <b>prior biological knowledge</b> as an <b>inductive bias</b> — an assumption built into the model's structure that constrains what it can learn, so it generalizes from less data. GEARS encodes two curated databases as graphs and processes them with a <b>GNN (graph neural network)</b> — a network that passes information along the edges of a graph, so connected nodes influence each other. Goal: predict perturbations of genes <b>never perturbed in training</b>.</p>
 
   <blockquote>"GEARS is uniquely able to predict the outcomes of perturbation sets that involve one or more genes for which there are no experimental perturbation data."<span class="who">— Results</span></blockquote>
 
   <blockquote>"This relies on two biological intuitions: (i) genes that share similar expression patterns should likely respond similarly to external perturbations, and (ii) genes that are involved in similar pathways should impact the expression of similar genes after perturbation."<span class="who">— Results</span></blockquote>
 
   <ul class="keys">
-    <li><b>Architecture:</b> separate gene + perturbation embeddings combined through a <b>graph neural network</b> over knowledge graphs; predicts per-gene post-perturbation state.</li>
-    <li><b>Two intuitions → two graphs:</b> co-expression graph for gene embeddings, GO-derived graph for perturbation embeddings.</li>
-    <li><b>Numbers:</b> 30–50% MSE improvement over baselines on top-20 DE genes; up to <b>53% improvement</b> when both genes of a combination are unseen; >2× Pearson on all genes.</li>
+    <li><b>Architecture:</b> separate gene + perturbation embeddings (learned vectors representing each gene and each "breaking gene X" action) combined through a GNN over the knowledge graphs; predicts per-gene post-perturbation state.</li>
+    <li><b>Two intuitions → two graphs:</b> a <b>co-expression graph</b> (genes linked if they are active together across cells — genes that behave alike likely respond alike) and a <b>Gene Ontology (GO) graph</b> (a curated database of gene functions and pathways — genes in the same pathway likely affect the same targets).</li>
+    <li><b>Numbers:</b> 30–50% MSE improvement over baselines on the <b>top-20 DE genes</b> (DE = differentially expressed: the genes that change most under the perturbation — the ones that matter; most genes barely change); >2× Pearson correlation (a similarity score between predicted and true expression profiles) on all genes; up to <b>53% improvement</b> when both genes of a combination are unseen.</li>
     <li><b>Generalization classes:</b> 0, 1, or 2 unseen genes in a two-gene perturbation — a clean taxonomy of how hard the extrapolation is.</li>
     <li><b>Scope note:</b> here the perturbation is a <b>gene knock-out/knock-down</b>, not a drug. The perturbation embedding is defined because genes have known relationships.</li>
   </ul>
@@ -398,7 +421,9 @@ footer a{color:var(--accent)}
   <h2>Deep-learning perturbation prediction does not yet outperform simple linear baselines</h2>
   <p class="paper-cite">Ahlmann-Eltze, Huber &amp; Anders, <a href="https://www.nature.com/articles/s41592-025-02772-6">Nature Methods 2025</a> · <a href="/8dm60-omics/linear-baselines-vs-DL-perturbation.md">full .md</a></p>
 
-  <p class="idea">The reality check — and the paper most likely to fuel the discussion round. Run 5 foundation models + 2 deep learning models against <b>"no change"</b> and <b>"additive"</b> baselines, and a simple linear model. Result: nothing beats them consistently.</p>
+  <p class="idea">Vocabulary for the figures: <b>L2 distance</b> = straight-line distance between predicted and observed expression vectors (lower is better). <b>LFC (log fold-change)</b> = how much a gene's expression changed vs. control, on a log scale. <b>Beeswarm plot</b> = each dot is one perturbation, stacked by its error; the red line is the mean. <b>Pseudobulk</b> = averaging single-cell counts per condition to get one profile per perturbation.</p>
+
+  <p class="idea">The reality check — and the paper most likely to fuel the discussion round. Run 5 foundation models + 2 deep learning models against <b>"no change"</b>, <b>"additive"</b>, and a simple linear model. Result: nothing beats them consistently.</p>
 
   <blockquote>"Here we compared five foundation models and two other deep learning models against deliberately simple baselines for predicting transcriptome changes after single or double perturbations. None outperformed the baselines, which highlights the importance of critical benchmarking in directing and evaluating method development."<span class="who">— Abstract</span></blockquote>
 
@@ -407,10 +432,10 @@ footer a{color:var(--accent)}
   <blockquote>"As our deliberately simple baselines are incapable of representing realistic biological complexity, yet were not outperformed by the foundation models, we conclude that the latter's goal of providing…"<span class="who">— Summary (cut short deliberately: find the ending)</span></blockquote>
 
   <ul class="keys">
-    <li><b>The two baselines:</b> <b>"no change"</b> (predict control expression) and <b>"additive"</b> (sum of individual log fold-changes). Neither uses the double-perturbation data.</li>
+    <li><b>The two baselines:</b> <b>"no change"</b> (always predict the control cells' expression — assume the perturbation did nothing) and <b>"additive"</b> (for a double perturbation A+B, predict the sum of the individual log fold-changes — the change each perturbation causes alone, added up on the log scale). Neither uses any double-perturbation data.</li>
     <li><b>Devastating detail:</b> for most genes, predictions of scGPT, UCE and scBERT <b>did not vary across perturbations</b> — they had learned to predict ≈ control.</li>
     <li><b>Synergy is rare and mostly wrong:</b> DL models rarely predicted synergistic interactions, and "it was even rarer that those predictions were correct."</li>
-    <li><b>Embedding recycling:</b> a <b>linear model with pretrained embeddings</b> (from scGPT/scFoundation/GEARS) performed as well or better than the full models — the representations have some value, the decoders don't add much.</li>
+    <li><b>Embedding recycling:</b> a <b>linear model with pretrained embeddings</b> (from scGPT/scFoundation/GEARS) performed as well or better than the full models. A <b>linear model</b> here means: predicted expression = matrix of gene embeddings × matrix of perturbation embeddings — no neural network, just one fitted weight matrix. The representations have some value; the fancy decoders don't add much.</li>
     <li><b>What did work:</b> a linear model with perturbation embeddings <b>pretrained on perturbation data</b> (cross cell-line). Pretraining on the atlas gave only "a small benefit over random embeddings."</li>
   </ul>
 
