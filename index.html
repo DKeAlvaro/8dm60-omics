@@ -123,6 +123,13 @@ figure img{width:100%; height:auto; display:block; mix-blend-mode:multiply}
 figcaption{font-family:'IBM Plex Mono',monospace; font-size:.68rem; letter-spacing:.06em; color:var(--ink-2); padding-top:.5rem; border-top:1px dotted var(--line); margin-top:.5rem}
 figcaption a{color:var(--accent)}
 
+/* advanced details boxes */
+details.adv{border:1px solid var(--line); background:var(--paper-2); margin:1.2rem 0}
+details.adv summary{cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2); padding:.6rem .9rem; user-select:none}
+details.adv[open] summary{color:var(--accent); border-bottom:1px solid var(--line)}
+details.adv>div{padding:.9rem}
+details.adv summary:hover{color:var(--accent)}
+
 /* glossary collapse */
 details.gloss summary{cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); padding:.3rem 0 .7rem; user-select:none}
 details.gloss[open] summary{margin-bottom:.2rem}
@@ -187,6 +194,7 @@ footer a{color:var(--accent)}
 </div>
 
 <nav class="nav">
+  <a href="#bio">§0 Biology</a>
   <a href="#data">00 Data</a>
   <a href="#p1">01 scVI</a>
   <a href="#p2">02 scGPT</a>
@@ -194,7 +202,7 @@ footer a{color:var(--accent)}
   <a href="#p4">04 CPA</a>
   <a href="#p5">05 GEARS</a>
   <a href="#p6">06 Baselines</a>
-  <a href="#map">The map</a>
+  <a href="#map">The thread</a>
   <a href="#prep">Prep list</a>
 </nav>
 
@@ -202,14 +210,14 @@ footer a{color:var(--accent)}
 
 <div class="brief">
   <h2>The brief</h2>
-  <p>The lecture is a progression: <b>measurement → representation → prediction → evaluation</b>. For each paper, be able to name the <b>task, data, representation, architecture, objective, evaluation and assumptions</b>.</p>
+  <p>This page teaches six papers as one story: <b>measurement → representation → prediction → evaluation</b>. Start at §0 even if you have some biology background — everything later leans on it. Read each section's opening idea, take the quizzes, and only open the <i>advanced</i> boxes if you want the machinery. The question the whole lecture turns on:</p>
   <div class="q">"What evidence would convince you that a model has learned <strong>transferable biology</strong> rather than statistical regularities in its training data?"</div>
 </div>
 
 <div class="brief">
   <h2>Mini-glossary</h2>
   <details class="gloss">
-    <summary>Show the 10 terms</summary>
+    <summary>Show the 16 terms</summary>
   <table>
     <tr><th>Term</th><th>Plain meaning</th></tr>
     <tr><td>scRNA-seq</td><td>Single-cell RNA sequencing: measures the expression level of ~20,000 genes in one individual cell, as counts.</td></tr>
@@ -222,24 +230,45 @@ footer a{color:var(--accent)}
     <tr><td>DE genes</td><td>Differentially expressed genes: the ones whose expression actually changes between conditions — the interesting ones.</td></tr>
     <tr><td>CRISPR</td><td>Gene-editing tool used to deliberately disable a specific gene in cells.</td></tr>
     <tr><td>GO (Gene Ontology)</td><td>A curated public database describing what genes do and which pathways they belong to.</td></tr>
+    <tr><td>mRNA</td><td>The working copy of a gene's instruction, made when the cell uses that gene. What scRNA-seq counts.</td></tr>
+    <tr><td>Count matrix</td><td>The data object of the whole lecture: rows = genes, columns = cells, entries = how many copies were detected.</td></tr>
+    <tr><td>VAE (autoencoder)</td><td>Two neural networks back to back: one compresses the input to a short summary, the other reconstructs the input from that summary. Training forces the summary to be good.</td></tr>
+    <tr><td>Transformer / attention</td><td>The architecture behind ChatGPT; every piece of the input can look at every other piece, so meaning is computed in context.</td></tr>
+    <tr><td>HVG</td><td>Highly variable genes: the ~2000 genes that vary most across cells. A decades-old, model-free way to summarize a dataset.</td></tr>
+    <tr><td>L2 distance</td><td>Straight-line distance between a predicted and an observed expression profile — lower is better.</td></tr>
   </table>
   </details>
 </div>
+
+<!-- ============ 0. BIOLOGY PRIMER ============ -->
+<section class="paper" id="bio">
+  <div class="sec-tag"><span class="sec-num">§0</span><span class="sec-ctx">Start here · the biology you need</span></div>
+  <h2>What is a gene, and what does it mean to measure one?</h2>
+  <p class="idea"><b>How to read this page.</b> Everything below is built from a handful of biological facts, explained here. No prior knowledge is assumed — if a term ever feels shaky, the glossary above is the fallback. Your goal is not to memorize details: it is to finish each section able to answer its questions.</p>
+  <ul class="keys">
+    <li><b>DNA is the instruction manual of the cell.</b> It is a very long molecule made of four letters (A, C, G, T). A <b>gene</b> is a stretch of that manual — a single instruction, such as "build this protein" or "regulate that other gene". Humans have roughly 20,000 of them.</li>
+    <li><b>Genes don't act directly; they are first copied.</b> When a cell uses a gene, the cell makes a working copy of that gene's instruction out of a related molecule called <b>mRNA</b>. This copy step is called <b>transcription</b>. The copy is what gets read and turned into a protein.</li>
+    <li><b>Gene expression = how many copies exist right now.</b> A gene is "highly expressed" when the cell is currently making many mRNA copies of it; "not expressed" means zero copies. Expression is activity, not presence — every cell has the same genes, but different cells use different ones.</li>
+    <li><b>That's what makes a cell a cell.</b> A skin cell, an immune cell and a neuron carry the same 20,000 genes but run different subsets at different intensities. The full list of "which gene, how many copies" for one cell is called its <b>expression profile</b> — a list of 20,000 numbers.</li>
+    <li><b>A perturbation is deliberately changing the manual.</b> Break one gene (with a gene-editing tool like <b>CRISPR</b>) or add a drug, and some of those numbers shift — and shift other genes too, because genes influence each other. Observing which numbers move is how biologists work out what a gene does.</li>
+  </ul>
+  <p class="idea">One picture to carry through the whole lecture: <b>a cell is a point with 20,000 coordinates</b> — one coordinate per gene, the value being how expressed that gene is. Similar cells are nearby points; a disease or a drug moves a cell to a different point. Every model in this lecture is a way of reading those points, compressing them, or predicting where a perturbation will move them. Next: how those numbers are actually measured.</p>
+</section>
 
 <!-- ============ 0. DATA ============ -->
 <section class="paper" id="data">
   <div class="sec-tag"><span class="sec-num">00</span><span class="sec-ctx">The substrate · measurement before models</span></div>
   <h2>What the data actually is — and why it's messy</h2>
-  <p class="idea">Everything in this lecture stands on one measurement: <b>scRNA-seq</b>. Genes are transcribed into mRNA; RNA-seq sequences those molecules and summarizes them as a <b>count table</b> (genes × samples); the single-cell version dissociates a tissue, captures cells one by one in droplets or wells, tags each cell's RNA with a <b>cell barcode</b>, and outputs a sparse <b>genes × cells count matrix</b>. Higher counts mean more detected transcripts — not direct absolute abundance.</p>
-  <p class="idea">From that one object you can read out cell types (clusters in a UMAP), cell states (continua of activation/differentiation), markers and pathways (heatmaps), condition contrasts (healthy vs diseased), trajectories and cell–cell communication, and even treatment response (responder vs resistant). One measurement, a whole analysis pipeline — which is exactly why the quality of the <i>representation</i> matters. But the measurement is ugly, and the five challenges below are what every model in this lecture is secretly designed around:</p>
+  <p class="idea">Everything in this lecture stands on one measurement: <b>single-cell RNA sequencing (scRNA-seq)</b>. It takes the expression profile from §0 and measures it for real: count, for each of the ~20,000 genes, how many mRNA copies are floating in one individual cell. The lab version works like this: a tissue is broken apart into single cells, each cell is captured alone in its own tiny compartment, its mRNA is tagged with a unique <b>cell barcode</b> (so later you can tell which copy came from which cell), and everything is read out together. The result is a <b>genes × cells count matrix</b>: each column is one cell, each row one gene, each entry a count. One caveat that matters later: a count of 50 means "50 copies detected", not "exactly 50 copies existed" — the measurement is a noisy window, not a perfect tally.</p>
+  <p class="idea">From that one object you can read out cell types (groups of nearby points), cell states (gradual shifts between them), which genes define each type, healthy-vs-diseased comparisons, and even how cells respond to treatment. One measurement, a whole analysis pipeline — which is exactly why the quality of the <i>representation</i> matters. But the measurement is ugly, and the five challenges below are what every model in this lecture is secretly designed around:</p>
   <ul class="keys">
-    <li><b>Sparsity / dropout:</b> only a fraction of a cell's transcripts are detected — most genes read 0.</li>
-    <li><b>Sequencing depth:</b> total counts (library size) vary wildly — Cell X ~1,242 UMIs vs Cell Y ~22,387.</li>
-    <li><b>Batch effects:</b> same cell types separate by processing batch — technical separation, not biology.</li>
-    <li><b>Transcriptional noise:</b> the same gene varies stochastically across similar cells.</li>
-    <li><b>Scale:</b> datasets grow from 10² to 10⁶–10⁷ cells — a computational burden.</li>
+    <li><b>Sparsity / dropout:</b> the machine only samples a small part of each cell's mRNA, so most genes read 0 in most cells — even genes that are genuinely active. The zeros are mostly "not detected", not "not there".</li>
+    <li><b>Sequencing depth:</b> some cells get read out much more thoroughly than others — Cell X got ~1,242 total copies counted, Cell Y ~22,387. Same biology, different sampling effort, wildly different totals.</li>
+    <li><b>Batch effects:</b> cells processed on different days, machines or protocols come out systematically shifted — two identical cell types can look different purely because of how they were handled. Technical, not biological.</li>
+    <li><b>Transcriptional noise:</b> even two genuinely identical cells differ randomly — gene activity jitters by chance.</li>
+    <li><b>Scale:</b> datasets grow from hundreds to millions of cells — a computational burden.</li>
   </ul>
-  <p class="idea">Test yourself on the substrate before the models. <i>Questions marked <b>Menti</b> were asked live during the session.</i></p>
+  <p class="idea">Test yourself before moving on. <i>Questions marked <b>Menti</b> were asked live during the session.</i></p>
 
 <div class="quiz" data-quiz>
     <div class="quiz-head"><span>Menti poll</span><span>Q·1</span></div>
@@ -297,9 +326,9 @@ footer a{color:var(--accent)}
   <h2>scVI — deep generative modeling for single-cell transcriptomics</h2>
   <p class="paper-cite">Lopez et al., <a href="https://www.nature.com/articles/s41592-018-0229-2">Nature Methods 2018</a> · <a href="/8dm60-omics/scVI-deep-generative-single-cell.md">full .md</a></p>
 
-  <p class="idea">First, the biology in one breath: a <b>gene</b> is a recipe for making a protein; <b>gene expression</b> is how active that recipe is in a given cell; and <b>single-cell RNA-seq (scRNA-seq)</b> is the technology that measures the activity of ~20,000 genes in <i>one single cell at a time</i>, producing a count vector. A <b>perturbation</b> is deliberately breaking one gene (e.g. CRISPR knock-out) or adding a drug, to see what changes.</p>
+  <p class="idea">The idea, in one breath: each cell is a point with 20,000 noisy coordinates (§0). scVI <b>compresses each cell to 10 numbers</b> that keep the biology and drop the technical junk — so that all downstream questions (cell types, comparisons, batch differences) can be asked on those 10 numbers instead of the raw mess. That compressed summary is called a <b>latent representation</b>, and every paper after this one builds on the concept.</p>
 
-  <p class="idea">The foundational move of this paper: treat gene expression as a <b>noisy probabilistic observation</b> of a hidden cell state, and learn that state with a <b>VAE (variational autoencoder)</b> — a neural network that compresses each cell's 20,000-dim count vector into a small vector (here 10 numbers) that captures the essentials, then learns to reconstruct the counts back from it. Everything after this paper builds on the idea of a <b>latent representation</b> of a cell: a learned, compressed summary of its state.</p>
+  <p class="idea">How it works, without the statistics: scVI is a <b>VAE (variational autoencoder)</b> — two neural networks back to back. The first (<b>encoder</b>) reads a cell's 20,000 counts and outputs the 10-number summary. The second (<b>decoder</b>) tries to reconstruct the original counts from just those 10 numbers. Training forces the summary to be <i>good enough to reconstruct the cell</i> — that is what makes it capture the essentials. Two extra design choices are the paper's real contribution: the 10 numbers are forced to keep <b>biology</b> while explicitly setting aside the two technical factors from section 00 (<b>library size</b> — how thoroughly this cell was sampled — and <b>batch effects</b> — which machine/day processed it), and the reconstruction is judged with a statistical model that suits counts-with-many-zeros (a <b>zero-inflated negative binomial, ZINB</b> — the details box below unpacks this).</p>
 
   <blockquote>"Transcriptome measurements of individual cells reflect unexplored biological diversity, but are also affected by technical noise and bias. This raises the need to model and account for the resulting uncertainty in any downstream analysis."<span class="who">— Abstract</span></blockquote>
 
@@ -335,7 +364,8 @@ footer a{color:var(--accent)}
   </figure>
 
 
-  <h3 style="font-family:'Ibarra Real Nova',serif;margin:1.6rem 0 .4rem">From the lecture: the architecture, block by block</h3>
+  <details class="adv"><summary>Advanced · the architecture block by block, and the training objective</summary>
+  <div>
   <p class="idea">The discussion session rebuilt scVI as five blocks. Read them as a pipeline:</p>
   <ul class="keys">
     <li><b>(a) Input:</b> raw expression counts <i>x</i><sub>n,1</sub>…<i>x</i><sub>n,G</sub> plus the batch ID <i>s</i><sub>n</sub>. The batch is an <i>input</i>, not noise to filter later.</li>
@@ -348,15 +378,17 @@ footer a{color:var(--accent)}
   <p class="idea">Training minimizes the <b>ELBO</b> per cell:</p>
   <blockquote>ELBO<sub>n</sub> = 𝔼<sub>q</sub>[ log p(x<sub>n</sub><sup>obs</sup> | z<sub>n</sub>, l<sub>n</sub>, s<sub>n</sub>) ] − KL( q(z<sub>n</sub>, l<sub>n</sub> | x<sub>n</sub><sup>obs</sup>, s<sub>n</sub>) ∥ p(z<sub>n</sub>, l<sub>n</sub> | s<sub>n</sub>) )</blockquote>
   <p class="idea">Two terms, two jobs: the <b>likelihood term</b> asks "how probable are the observed counts under the ZINB the decoder produced (μ mean, θ dispersion, π dropout)?" — reconstruction. The <b>KL term</b> keeps the posterior near the prior so the latent space stays smooth and comparable across cells — regularization. The lecture's own applications/advantages/limitations summary:</p>
-  <table>
+  <table class="adv-table">
     <tr><th></th><th>From the lecture</th></tr>
     <tr><td>Applications</td><td>Latent representation (dim. reduction, clustering) · data integration with batch covariates · denoised expression &amp; DE testing · large atlases</td></tr>
     <tr><td>Advantages</td><td>Count-aware (probabilistic, not Gaussian) · uncertainty-aware (posterior per cell) · separates state/depth/batch · scalable (amortized inference, mini-batches)</td></tr>
     <tr><td>Limitations</td><td>Latent ≠ interpretable biology · depends on distributional assumptions · batch correction can fail or erase real signal when batch ∩ biology are confounded · <b>not causal</b> — doesn't predict unseen perturbations</td></tr>
   </table>
+  </div>
+  </details>
 
   <div class="quiz" data-quiz>
-    <div class="quiz-head"><span>Menti poll</span><span>Q·5</span></div>
+    <div class="quiz-head"><span>Advanced</span><span>Q·5</span></div>
     <div class="quiz-body">
       <p class="qq">Which architecture best describes the core of scVI? And what are the main components and their roles?</p>
       <button class="opt" data-correct>A VAE: encoder → distributions over latent state z and library size l → sample → decoder → ZINB counts per gene</button>
@@ -368,7 +400,7 @@ footer a{color:var(--accent)}
   </div>
 
 <div class="quiz" data-quiz>
-    <div class="quiz-head"><span>Menti poll</span><span>Q·6</span></div>
+    <div class="quiz-head"><span>Advanced</span><span>Q·6</span></div>
     <div class="quiz-body">
       <p class="qq">What is the main training objective in scVI?</p>
       <button class="opt" data-correct>ELBO: ZINB reconstruction likelihood minus a KL term keeping the posterior near its prior</button>
@@ -411,9 +443,9 @@ footer a{color:var(--accent)}
   <h2>scGPT — a foundation model for single-cell multi-omics</h2>
   <p class="paper-cite">Cui et al., <a href="https://www.nature.com/articles/s41592-024-02201-0">Nature Methods 2024</a> · <a href="/8dm60-omics/scGPT-foundation-model-single-cell.md">full .md</a></p>
 
-  <p class="idea">Recap of what you need: a <b>transformer</b> is the architecture behind LLMs — it processes a sequence of tokens (words) using self-attention, so each token can gather information from all others. <b>Pretraining</b> means training it on a huge corpus with a self-supervised objective (predict masked pieces), then adapting it to specific tasks later. scGPT applies exactly this recipe to cells.</p>
+  <p class="idea">The idea, in one breath: scVI compresses cells, but trains a <i>separate</i> model per dataset, from scratch each time. scGPT asks the question GPT asked about text — <b>why not train one big model once, on enormous amounts of data, and reuse it everywhere?</b> Its bet: treat <b>genes as words</b> and <b>cells as sentences</b>, pretrain on 33 million cells, and let everyone reuse the result instead of retraining from scratch.</p>
 
-  <p class="idea">The bet: what worked for language works for cells. Treat <b>genes as words</b> and <b>cells as sentences</b>, pretrain a generative transformer on 33M cells, then transfer to many downstream tasks.</p>
+  <p class="idea">The machinery behind it: a <b>transformer</b> is the architecture behind ChatGPT. Its one key trick, <b>self-attention</b>, lets every piece of the input look at every other piece and decide what is relevant to it — so a word (or gene) is understood in <i>context</i>. <b>Pretraining</b> means training this model on a huge corpus with a self-supervised objective — no labels needed, just <i>hide some pieces and ask the model to predict them from the rest</i>. scGPT applies exactly that recipe to cells.</p>
 
   <blockquote>"Drawing parallels between linguistic constructs and cellular biology — where texts comprise words, similarly, cells are defined by genes — our study probes the applicability of foundation models to advance cellular biology and genetics research."<span class="who">— Abstract</span></blockquote>
 
@@ -445,8 +477,7 @@ footer a{color:var(--accent)}
   </figure>
 
 
-  <h3 style="font-family:'Ibarra Real Nova',serif;margin:1.6rem 0 .4rem">From the lecture: why it's non-trivial, and how it's done</h3>
-  <p class="idea">Two mismatches make the language-model analogy genuinely hard:</p>
+  <p class="idea"><b>Why it's genuinely hard — two mismatches with language:</b></p>
   <ul class="keys">
     <li><b>Non-sequential:</b> text tokens have strict order that dictates meaning; a transcriptome is a <i>bag-of-genes</i> expressed simultaneously, with no inherent order.</li>
     <li><b>Quantitative:</b> a word token is present or absent (categorical); every gene token carries a continuous abundance value.</li>
@@ -469,7 +500,7 @@ footer a{color:var(--accent)}
   </div>
 
 <div class="quiz" data-quiz>
-    <div class="quiz-head"><span>Menti poll · select all</span><span>Q·9</span></div>
+    <div class="quiz-head"><span>Advanced · select all</span><span>Q·9</span></div>
     <div class="quiz-body">
       <p class="qq">How can we adapt Transformers to scRNA-seq? What makes it non-trivial?</p>
       <button class="opt" data-correct>Genes as tokens with value embeddings; non-trivial: no sequence order, continuous values</button>
@@ -481,7 +512,7 @@ footer a{color:var(--accent)}
   </div>
 
 <div class="quiz" data-quiz>
-    <div class="quiz-head"><span>Menti poll</span><span>Q·10</span></div>
+    <div class="quiz-head"><span>Advanced</span><span>Q·10</span></div>
     <div class="quiz-body">
       <p class="qq">How is a cell converted into tokens in scGPT?</p>
       <button class="opt" data-correct>Gene ID + binned expression + condition, three embeddings summed per token</button>
@@ -493,7 +524,7 @@ footer a{color:var(--accent)}
   </div>
 
 <div class="quiz" data-quiz>
-    <div class="quiz-head"><span>Menti poll</span><span>Q·11</span></div>
+    <div class="quiz-head"><span>Advanced</span><span>Q·11</span></div>
     <div class="quiz-body">
       <p class="qq">How can scGPT learn context between genes?</p>
       <button class="opt" data-correct>Mask some expression values; predict them from the cell token and known genes via a generative attention mask</button>
@@ -570,8 +601,8 @@ footer a{color:var(--accent)}
   </table>
 
   
-  <h3 style="font-family:'Ibarra Real Nova',serif;margin:1.6rem 0 .4rem">From the lecture: how a good embedding is judged — and the numbers</h3>
-  <p class="idea">Two axes, and a good embedding must score on <b>both</b>: <b>biological conservation</b> (cell-type separability, neighborhood purity, preservation of known structure) and <b>batch integration</b> (mixing of batches within populations, batch not predictable from the embedding). The lecture showed the zero-shot comparison on five datasets — the numbers:</p>
+  <p class="idea"><b>How a good representation is judged — two axes, and it must score on both:</b> <b>biological conservation</b> (do different cell types come out clearly separated?) and <b>batch integration</b> (do cells processed on different days get mixed as they should, instead of clustering by machine?). The zero-shot comparison on five datasets:</p>
+  <p class="idea"><i>How to read the tables: higher is better on both. Each column is a dataset; each row a method. Watch the foundation models (Geneformer, scGPT) against the simple ones (HVG, Harmony, scVI).</i></p>
   <table>
     <tr><th>AvgBIO (biology)</th><th>Pancreas 16k</th><th>PBMC 95k</th><th>Tabula Sapiens 483k</th><th>PBMC 12k</th><th>Immune 330k</th></tr>
     <tr><td>HVG</td><td>0.68</td><td>0.53</td><td>0.45</td><td>0.63</td><td>0.53</td></tr>
@@ -669,8 +700,7 @@ footer a{color:var(--accent)}
   </figure>
 
 
-  <h3 style="font-family:'Ibarra Real Nova',serif;margin:1.6rem 0 .4rem">From the lecture: why counterfactual, and how CPA disentangles</h3>
-  <p class="idea">Why prediction is needed: the space of drugs × targets × doses × combinations explodes, experiments are expensive and low-throughput — "we can't test everything". Why it's hard at a deeper level: <b>scRNA-seq is destructive</b>. The cell is lysed during measurement, so the same cell can never be observed before and after treatment; control and treated groups contain <i>different cells</i>. Every perturbation-response question is therefore inherently <b>counterfactual</b>: what would <i>this</i> cell have looked like under another treatment?</p>
+  <p class="idea"><b>Why this is harder than it looks.</b> Beyond the combinatorial explosion, there is a fundamental obstacle: <b>scRNA-seq is destructive</b>. Measuring a cell destroys it — the cell is broken open during measurement, so the same cell can never be observed before <i>and</i> after treatment; control and treated groups contain <i>different cells</i>. Every perturbation-response question is therefore inherently <b>counterfactual</b>: what would <i>this</i> cell have looked like under another treatment? No experiment can answer that directly — only a model can.</p>
   <p class="idea">What determines the response — and how CPA encodes each factor separately:</p>
   <table>
     <tr><th>Factor</th><th>CPA component</th></tr>
@@ -680,7 +710,7 @@ footer a{color:var(--accent)}
     <tr><td>Cell type / context / covariates</td><td>Covariate embeddings <i>c</i></td></tr>
     <tr><td>Combinations</td><td>Sum of perturbation embeddings in the composition block</td></tr>
   </table>
-  <p class="idea">The composed state <i>z + f₁(d₁) + f₂(d₂) + c₁ + …</i> is decoded back to genes. The trick that keeps it honest is <b>adversarial disentanglement</b>: discriminators try to predict the perturbation (and covariates) from the basal state <i>z</i>; the encoder is trained to make them fail. So treatment information can only live in the explicit perturbation embeddings — which is what makes swapping them in silico valid. And the generalization boundary, verbatim from the lecture: <b>can</b> — new combinations of individually-seen drugs, known drugs in new cellular contexts, unseen doses; <b>cannot</b> — completely unseen perturbations, never-seen cell types, or synergy for combinations absent from training. That boundary is exactly where GEARS picks up.</p>
+  <p class="idea">The composed state <i>z + f₁(d₁) + f₂(d₂) + c₁ + …</i> is decoded back to genes. The trick that keeps it honest is <b>adversarial disentanglement</b> — a cat-and-mouse game inside the model. A small network (the <b>discriminator</b>) tries to guess which treatment a cell got by looking only at the basal state <i>z</i>; the encoder is trained to make it <i>fail</i>. If the discriminator can't read treatment out of <i>z</i>, then all treatment information must live in the separate perturbation embeddings — which is exactly what makes swapping them in silico valid. And the generalization boundary, verbatim from the lecture: <b>can</b> — new combinations of individually-seen drugs, known drugs in new cellular contexts, unseen doses; <b>cannot</b> — completely unseen perturbations, never-seen cell types, or synergy for combinations absent from training. That boundary is exactly where GEARS picks up.</p>
 
   <div class="quiz" data-quiz>
     <div class="quiz-head"><span>Concept</span><span>Q·16</span></div>
@@ -787,8 +817,10 @@ footer a{color:var(--accent)}
   </figure>
 
 
-  <h3 style="font-family:'Ibarra Real Nova',serif;margin:1.6rem 0 .4rem">From the lecture: the two prior graphs, and the pipeline in five steps</h3>
-  <p class="idea">The prior knowledge, concretely. The <b>co-expression graph</b> links genes with high |Pearson| correlation — lecture example neighborhoods: ribosomal genes (ACTB, GAPDH, RPS3…), interferon-response genes (STAT1, IFIT1, OAS1, MX1, ISG15), cell-cycle genes (MKI67, PCNA, CDK1, TOP2A, TYMS). The <b>GO graph</b> links genes sharing Gene Ontology annotations, by Jaccard overlap of their term sets — e.g. STAT1/IFIT1/ISG15/MX1 all carry "interferon signaling" and "defense response to virus"; EGFR/GRB2/RAF1/MAPK1 share "MAPK cascade". Two graphs, two notions of similarity: <i>observed</i> (co-expression) vs <i>functional</i> (GO).</p>
+  <p class="idea"><b>What "using a map" means concretely: two graphs.</b> The <b>co-expression graph</b> links genes that are active together across cells — measured from the data itself. Lecture example neighborhoods: ribosomal genes (ACTB, GAPDH, RPS3…), interferon-response genes (STAT1, IFIT1, OAS1, MX1, ISG15), cell-cycle genes (MKI67, PCNA, CDK1, TOP2A, TYMS). The <b>GO graph</b> links genes with the same documented function, from the Gene Ontology database — e.g. STAT1/IFIT1/ISG15/MX1 all carry "interferon signaling"; EGFR/GRB2/RAF1/MAPK1 share "MAPK cascade". Two graphs, two notions of similarity: <i>observed</i> (co-expression) vs <i>functional</i> (GO).</p>
+
+  <details class="adv"><summary>Advanced · the full pipeline in five steps</summary>
+  <div>
   <p class="idea">The architecture, as built up step by step in the session:</p>
   <ul class="keys">
     <li><b>1 · Initialize:</b> each gene gets two learnable embeddings — x<sub>u</sub><sup>gene</sup> (the gene) and x<sub>u</sub><sup>pert</sup> (perturbing it).</li>
@@ -798,6 +830,8 @@ footer a{color:var(--accent)}
     <li><b>5 · Predict:</b> gene-specific decoder combines local + cross-gene info: ẑ<sub>u</sub> = Decoder<sub>u</sub>(z<sub>u</sub> ∥ h<sup>cg</sup>), and the final prediction is <b>control expression plus predicted effect</b>: ĝ<sub>u</sub> = g<sub>u,ctrl</sub> + ẑ<sub>u</sub>.</li>
   </ul>
   <p class="idea">Training: input = control profile + perturbation set; target = measured post-perturbation expression; loss = predicted vs measured, with an <b>autofocus direction-aware loss</b> that upweights genes with strong perturbation-induced changes — because most genes barely change, plain MSE underweights exactly the genes that matter. Generalization boundary: <b>can</b> — unseen genes, new combinations including unseen genes; <b>cannot / not designed for</b> — new cell types or cross-cell-type transfer, and combination prediction still benefits from combinatorial training data. Performance is only as good as the prior graphs are relevant.</p>
+  </div>
+  </details>
 
   <div class="quiz" data-quiz>
     <div class="quiz-head"><span>Menti poll</span><span>Q·20</span></div>
@@ -897,8 +931,7 @@ footer a{color:var(--accent)}
   </figure>
 
 
-  <h3 style="font-family:'Ibarra Real Nova',serif;margin:1.6rem 0 .4rem">From the lecture: the two benchmark tasks and the verdict</h3>
-  <p class="idea">The lecture framed the evaluation as two tasks, each with its <i>own</i> baseline — "different generalisation claims require different baselines":</p>
+  <p class="idea"><b>The evaluation as two tasks, each with its <i>own</i> baseline</b> — "different generalisation claims require different baselines":</p>
   <table>
     <tr><th>Task</th><th>Setup</th><th>Baseline</th><th>Question tested</th></tr>
     <tr><td>Unseen combinations</td><td>Train on singles + some doubles; test on held-out doubles</td><td><b>Additive:</b> ŷ<sup>A+B</sup> = y<sup>A</sup> + y<sup>B</sup> − y<sup>∅</sup></td><td>Can the model predict non-additive structure beyond what additivity explains?</td></tr>
@@ -976,11 +1009,21 @@ footer a{color:var(--accent)}
   </div>
 </section>
 
-<!-- ============ MAP ============ -->
+<!-- ============ THREAD ============ -->
 <section class="paper" id="map">
-  <div class="sec-tag"><span class="sec-num">§</span><span class="sec-ctx">In-class focus</span></div>
-  <h2>The map: five axes to argue about</h2>
-  <p class="idea">The six papers are positions on axes, not islands. Where each sits:</p>
+  <div class="sec-tag"><span class="sec-num">§</span><span class="sec-ctx">How it all connects</span></div>
+  <h2>The thread: what each paper left open, and what the next one answers</h2>
+  <p class="idea">The lecture is not six unrelated papers — it is one conversation. Read it as a chain of questions, each one raised by the previous answer:</p>
+  <ul class="keys">
+    <li><b>The data is a mess.</b> 20,000 noisy coordinates per cell (§0). <span class="accent">→ scVI:</span> compress each cell to a clean 10-number summary that separates biology from technique.</li>
+    <li><b>But scVI starts from scratch every time.</b> New dataset, new model, new training. <span class="accent">→ scGPT:</span> train one giant model once on 33M cells; reuse it everywhere. Genes as words, cells as sentences.</li>
+    <li><b>Does the giant model actually understand cells?</b> Its headline results all involve fine-tuning. <span class="accent">→ Zero-shot eval:</span> use it as-is, no training — and the decades-old simple baseline beats it. Pretraining ≠ understanding.</li>
+    <li><b>So stop describing cells; start predicting what happens to them.</b> But measurement destroys the cell — you can never see the same cell twice. <span class="accent">→ CPA:</span> a model that answers the counterfactual, keeping state, drug and dose in separate slots so you can swap the drug in silico.</li>
+    <li><b>CPA can only recombine drugs it has seen.</b> What about a gene never perturbed in any experiment? <span class="accent">→ GEARS:</span> use the map of known biology (co-expression + GO graphs) to infer what perturbing an unseen gene would do.</li>
+    <li><b>And finally — does any of this fancy machinery actually work?</b> <span class="accent">→ Baselines paper:</span> no. Predict "nothing changed" and you match or beat every deep model. The field was measuring the wrong thing.</li>
+  </ul>
+  <p class="idea"><b>What to keep, if you keep only five things:</b> ① a cell is a point with 20,000 coordinates, and the measurement of it is noisy; ② compressing a cell to a good summary (scVI) is not the same as predicting what will change it; ③ "strong after fine-tuning" and "strong as-is" are different claims, and as-is the big models lose to simple baselines; ④ perturbation prediction is counterfactual — models, not measurements, must answer it; ⑤ any complexity claim must be tested against the simple baseline that matches exactly what was held out.</p>
+  <p class="idea">Zooming out, the six papers are positions on axes, not islands. Where each sits:</p>
 
   <div class="spectrum">
     <div class="track">
