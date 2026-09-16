@@ -20,7 +20,7 @@ body{
 ::selection{background:var(--accent);color:var(--paper)}
 
 /* masthead */
-.masthead{border-bottom:3px double var(--ink); padding:2.2rem 1.4rem 1.2rem; text-align:center}
+.masthead{border-bottom:3px double var(--ink); padding:1.6rem 1.4rem .9rem; text-align:center}
 .masthead .kicker{font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.28em; text-transform:uppercase; color:var(--accent)}
 .masthead h1{font-family:'Ibarra Real Nova',serif; font-size:clamp(2.2rem,6vw,3.6rem); font-weight:600; line-height:1.05; margin:.35rem 0 .5rem}
 .masthead .sub{font-style:italic; color:var(--ink-2); max-width:46rem; margin:0 auto}
@@ -42,7 +42,7 @@ main{max-width:52rem; margin:0 auto; padding:1rem 1.2rem 4rem}
 /* intro */
 .brief{
   border:1px solid var(--ink); background:var(--paper-2);
-  padding:1.5rem 1.6rem; margin:2rem 0;
+  padding:1.2rem 1.4rem; margin:1.2rem 0 1.6rem;
   box-shadow:6px 6px 0 var(--line);
 }
 .brief h2{font-family:'Ibarra Real Nova',serif; font-size:1.5rem; margin-bottom:.6rem}
@@ -123,6 +123,11 @@ figure img{width:100%; height:auto; display:block; mix-blend-mode:multiply}
 figcaption{font-family:'IBM Plex Mono',monospace; font-size:.68rem; letter-spacing:.06em; color:var(--ink-2); padding-top:.5rem; border-top:1px dotted var(--line); margin-top:.5rem}
 figcaption a{color:var(--accent)}
 
+/* glossary collapse */
+details.gloss summary{cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); padding:.3rem 0 .7rem; user-select:none}
+details.gloss[open] summary{margin-bottom:.2rem}
+details.gloss table{margin-top:0}
+
 /* footer */
 footer{border-top:3px double var(--ink); margin-top:3rem; padding:1.4rem; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.1em; color:var(--ink-2)}
 footer a{color:var(--accent)}
@@ -170,10 +175,9 @@ footer a{color:var(--accent)}
 <body>
 
 <header class="masthead">
-  <div class="kicker">8DM60 · Multimodal AI in Biomedicine · Lecture 3 · Wed 16 Sep 2026</div>
+  <div class="kicker">8DM60 · Lecture 3 · Wed 16 Sep 2026</div>
   <h1>Omics Models</h1>
-  <p class="sub">From noisy single-cell measurements to representations of cell state, to predicting perturbation responses — and the uncomfortable question of what those predictions actually prove.</p>
-  <div class="meta">6 papers · 1 recurring question · guided self-study reviews vision models</div>
+  <p class="sub">From noisy single-cell measurements to perturbation prediction — and what those predictions actually prove.</p>
 </header>
 
 <div class="progress-wrap">
@@ -183,13 +187,13 @@ footer a{color:var(--accent)}
 </div>
 
 <nav class="nav">
+  <a href="#data">00 Data</a>
   <a href="#p1">01 scVI</a>
   <a href="#p2">02 scGPT</a>
   <a href="#p3">03 Zero-shot</a>
   <a href="#p4">04 CPA</a>
   <a href="#p5">05 GEARS</a>
   <a href="#p6">06 Baselines</a>
-  <a href="#data">00 Data</a>
   <a href="#map">The map</a>
   <a href="#prep">Prep list</a>
 </nav>
@@ -198,12 +202,14 @@ footer a{color:var(--accent)}
 
 <div class="brief">
   <h2>The brief</h2>
-  <p>The lecture is not a survey of architectures. It's a progression: <b>measurement → representation → prediction → evaluation</b>. For each paper you should be able to name the <b>task, data, representation, architecture, objective, training strategy, evaluation setting and assumptions</b>.</p>
-  <div class="q">"What evidence would convince you that a model has learned <strong>transferable biology</strong> rather than statistical regularities in its training data?" <span style="font-style:normal;font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.1em;display:block;margin-top:.4rem;color:var(--ink-2)">— the recurring question of the session</span></div>
+  <p>The lecture is a progression: <b>measurement → representation → prediction → evaluation</b>. For each paper, be able to name the <b>task, data, representation, architecture, objective, evaluation and assumptions</b>.</p>
+  <div class="q">"What evidence would convince you that a model has learned <strong>transferable biology</strong> rather than statistical regularities in its training data?"</div>
 </div>
 
 <div class="brief">
-  <h2>Mini-glossary (the terms the papers assume)</h2>
+  <h2>Mini-glossary</h2>
+  <details class="gloss">
+    <summary>Show the 10 terms</summary>
   <table>
     <tr><th>Term</th><th>Plain meaning</th></tr>
     <tr><td>scRNA-seq</td><td>Single-cell RNA sequencing: measures the expression level of ~20,000 genes in one individual cell, as counts.</td></tr>
@@ -217,6 +223,7 @@ footer a{color:var(--accent)}
     <tr><td>CRISPR</td><td>Gene-editing tool used to deliberately disable a specific gene in cells.</td></tr>
     <tr><td>GO (Gene Ontology)</td><td>A curated public database describing what genes do and which pathways they belong to.</td></tr>
   </table>
+  </details>
 </div>
 
 <!-- ============ 0. DATA ============ -->
