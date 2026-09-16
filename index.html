@@ -194,7 +194,7 @@ footer a{color:var(--accent)}
 </div>
 
 <nav class="nav">
-  <a href="#bio">§0 Biology</a>
+  <a href="#bio">0 Biology</a>
   <a href="#data">00 Data</a>
   <a href="#p1">01 scVI</a>
   <a href="#p2">02 scGPT</a>
@@ -210,7 +210,7 @@ footer a{color:var(--accent)}
 
 <div class="brief">
   <h2>The brief</h2>
-  <p>This page teaches six papers as one story: <b>measurement → representation → prediction → evaluation</b>. Start at §0 even if you have some biology background — everything later leans on it. Read each section's opening idea, take the quizzes, and only open the <i>advanced</i> boxes if you want the machinery. The question the whole lecture turns on:</p>
+  <p>This page teaches six papers as one story: <b>measurement → representation → prediction → evaluation</b>. Start at 0 even if you have some biology background — everything later leans on it. Read each section's opening idea, take the quizzes, and only open the <i>advanced</i> boxes if you want the machinery. The question the whole lecture turns on:</p>
   <div class="q">"What evidence would convince you that a model has learned <strong>transferable biology</strong> rather than statistical regularities in its training data?"</div>
 </div>
 
@@ -242,7 +242,7 @@ footer a{color:var(--accent)}
 
 <!-- ============ 0. BIOLOGY PRIMER ============ -->
 <section class="paper" id="bio">
-  <div class="sec-tag"><span class="sec-num">§0</span><span class="sec-ctx">Start here · the biology you need</span></div>
+  <div class="sec-tag"><span class="sec-num">0</span><span class="sec-ctx">Start here · the biology you need</span></div>
   <h2>What is a gene, and what does it mean to measure one?</h2>
   <p class="idea"><b>How to read this page.</b> Everything below is built from a handful of biological facts, explained here. No prior knowledge is assumed — if a term ever feels shaky, the glossary above is the fallback. Your goal is not to memorize details: it is to finish each section able to answer its questions.</p>
   <ul class="keys">
@@ -259,7 +259,7 @@ footer a{color:var(--accent)}
 <section class="paper" id="data">
   <div class="sec-tag"><span class="sec-num">00</span><span class="sec-ctx">The substrate · measurement before models</span></div>
   <h2>What the data actually is — and why it's messy</h2>
-  <p class="idea">Everything in this lecture stands on one measurement: <b>single-cell RNA sequencing (scRNA-seq)</b>. It takes the expression profile from §0 and measures it for real: count, for each of the ~20,000 genes, how many mRNA copies are floating in one individual cell. The lab version works like this: a tissue is broken apart into single cells, each cell is captured alone in its own tiny compartment, its mRNA is tagged with a unique <b>cell barcode</b> (so later you can tell which copy came from which cell), and everything is read out together. The result is a <b>genes × cells count matrix</b>: each column is one cell, each row one gene, each entry a count. One caveat that matters later: a count of 50 means "50 copies detected", not "exactly 50 copies existed" — the measurement is a noisy window, not a perfect tally.</p>
+  <p class="idea">Everything in this lecture stands on one measurement: <b>single-cell RNA sequencing (scRNA-seq)</b>. It takes the expression profile from 0 and measures it for real: count, for each of the ~20,000 genes, how many mRNA copies are floating in one individual cell. The lab version works like this: a tissue is broken apart into single cells, each cell is captured alone in its own tiny compartment, its mRNA is tagged with a unique <b>cell barcode</b> (so later you can tell which copy came from which cell), and everything is read out together. The result is a <b>genes × cells count matrix</b>: each column is one cell, each row one gene, each entry a count. One caveat that matters later: a count of 50 means "50 copies detected", not "exactly 50 copies existed" — the measurement is a noisy window, not a perfect tally.</p>
   <p class="idea">From that one object you can read out cell types (groups of nearby points), cell states (gradual shifts between them), which genes define each type, healthy-vs-diseased comparisons, and even how cells respond to treatment. One measurement, a whole analysis pipeline — which is exactly why the quality of the <i>representation</i> matters. But the measurement is ugly, and the five challenges below are what every model in this lecture is secretly designed around:</p>
   <ul class="keys">
     <li><b>Sparsity / dropout:</b> the machine only samples a small part of each cell's mRNA, so most genes read 0 in most cells — even genes that are genuinely active. The zeros are mostly "not detected", not "not there".</li>
@@ -326,7 +326,7 @@ footer a{color:var(--accent)}
   <h2>scVI — deep generative modeling for single-cell transcriptomics</h2>
   <p class="paper-cite">Lopez et al., <a href="https://www.nature.com/articles/s41592-018-0229-2">Nature Methods 2018</a> · <a href="/8dm60-omics/scVI-deep-generative-single-cell.md">full .md</a></p>
 
-  <p class="idea">The idea, in one breath: each cell is a point with 20,000 noisy coordinates (§0). scVI <b>compresses each cell to 10 numbers</b> that keep the biology and drop the technical junk — so that all downstream questions (cell types, comparisons, batch differences) can be asked on those 10 numbers instead of the raw mess. That compressed summary is called a <b>latent representation</b>, and every paper after this one builds on the concept.</p>
+  <p class="idea">The idea, in one breath: each cell is a point with 20,000 noisy coordinates (0). scVI <b>compresses each cell to 10 numbers</b> that keep the biology and drop the technical junk — so that all downstream questions (cell types, comparisons, batch differences) can be asked on those 10 numbers instead of the raw mess. That compressed summary is called a <b>latent representation</b>, and every paper after this one builds on the concept.</p>
 
   <p class="idea">How it works, without the statistics: scVI is a <b>VAE (variational autoencoder)</b> — two neural networks back to back. The first (<b>encoder</b>) reads a cell's 20,000 counts and outputs the 10-number summary. The second (<b>decoder</b>) tries to reconstruct the original counts from just those 10 numbers. Training forces the summary to be <i>good enough to reconstruct the cell</i> — that is what makes it capture the essentials. Two extra design choices are the paper's real contribution: the 10 numbers are forced to keep <b>biology</b> while explicitly setting aside the two technical factors from section 00 (<b>library size</b> — how thoroughly this cell was sampled — and <b>batch effects</b> — which machine/day processed it), and the reconstruction is judged with a statistical model that suits counts-with-many-zeros (a <b>zero-inflated negative binomial, ZINB</b> — the details box below unpacks this).</p>
 
@@ -1011,11 +1011,11 @@ footer a{color:var(--accent)}
 
 <!-- ============ THREAD ============ -->
 <section class="paper" id="map">
-  <div class="sec-tag"><span class="sec-num">§</span><span class="sec-ctx">How it all connects</span></div>
+  <div class="sec-tag"><span class="sec-num">✦</span><span class="sec-ctx">How it all connects</span></div>
   <h2>The thread: what each paper left open, and what the next one answers</h2>
   <p class="idea">The lecture is not six unrelated papers — it is one conversation. Read it as a chain of questions, each one raised by the previous answer:</p>
   <ul class="keys">
-    <li><b>The data is a mess.</b> 20,000 noisy coordinates per cell (§0). <span class="accent">→ scVI:</span> compress each cell to a clean 10-number summary that separates biology from technique.</li>
+    <li><b>The data is a mess.</b> 20,000 noisy coordinates per cell (0). <span class="accent">→ scVI:</span> compress each cell to a clean 10-number summary that separates biology from technique.</li>
     <li><b>But scVI starts from scratch every time.</b> New dataset, new model, new training. <span class="accent">→ scGPT:</span> train one giant model once on 33M cells; reuse it everywhere. Genes as words, cells as sentences.</li>
     <li><b>Does the giant model actually understand cells?</b> Its headline results all involve fine-tuning. <span class="accent">→ Zero-shot eval:</span> use it as-is, no training — and the decades-old simple baseline beats it. Pretraining ≠ understanding.</li>
     <li><b>So stop describing cells; start predicting what happens to them.</b> But measurement destroys the cell — you can never see the same cell twice. <span class="accent">→ CPA:</span> a model that answers the counterfactual, keeping state, drug and dose in separate slots so you can swap the drug in silico.</li>
