@@ -160,6 +160,7 @@ footer a{color:var(--accent)}
   <a href="#p4">04 CPA</a>
   <a href="#p5">05 GEARS</a>
   <a href="#p6">06 Baselines</a>
+  <a href="#lecture-qa">Lecture Q&A</a>
   <a href="#map">The map</a>
   <a href="#prep">Prep list</a>
 </nav>
@@ -461,6 +462,377 @@ footer a{color:var(--accent)}
       <button class="opt" data-correct>For most genes their predictions barely varied across perturbations — effectively predicting "no change"</button>
       <button class="opt">They were trained on datasets that included the test perturbations</button>
       <div class="expl"><b>Correct.</b> "for most genes, the predictions of scGPT, UCE and scBERT did not vary across perturbations" — matching the strongest baseline ('no change') is the signature of a model that has learned the prior distribution of expression, not the response to intervention. This is the lecture's core question made concrete.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LECTURE Q&A ============ -->
+<section class="paper" id="lecture-qa">
+  <div class="sec-tag"><span class="sec-num">Q</span><span class="sec-ctx">From the discussion slides · every lecture question, answered</span></div>
+  <h2>The lecture's own questions — worked answers</h2>
+  <p class="idea">Every question Federica posed during the session (including the Menti polls), with the reasoning behind each answer. Use these as your self-test: cover the answer, answer out loud, uncover.</p>
+
+  <h3 style="font-family:'Ibarra Real Nova',serif;margin:1.4rem 0 .4rem">Measurement &amp; the data</h3>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·1</span></div>
+    <div class="quiz-body">
+      <p class="qq">Which type(s) of omics data are covered in the papers?</p>
+      <button class="opt" data-correct>Single-cell transcriptomics (scRNA-seq) in all six papers; CPA additionally covers drug (chemical) perturbations, and GEARS adds gene-annotation priors</button>
+      <button class="opt">Genomics (DNA sequencing) in scVI and scGPT</button>
+      <button class="opt">Proteomics in CPA and GEARS</button>
+      <button class="opt">Spatial transcriptomics in the baselines paper</button>
+      <div class="expl"><b>Correct.</b> Every paper measures gene expression at single-cell resolution — the data object is always a genes × cells count matrix. The differences are in <i>what is done to the cells</i>: nothing (scVI, scGPT, zero-shot eval), a drug/dose (CPA), or a CRISPR knock-out (GEARS, baselines). No DNA sequencing, no proteins, no spatial.</div>
+    </div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Concept</span><span>Q·2</span></div>
+    <div class="quiz-body">
+      <p class="qq">What is RNA-seq and how is scRNA-seq measured?</p>
+      <button class="opt" data-correct>RNA-seq measures expression by sequencing RNA: genes → mRNA → sequenced reads → a gene × sample count table. scRNA-seq does it per cell: dissociate tissue, isolate single cells in droplets/wells, barcode each cell's RNA, sequence pooled, and count reads per gene per cell</button>
+      <button class="opt">It sequences DNA to find mutations in each gene</button>
+      <button class="opt">It measures proteins with antibodies, one per gene</button>
+      <button class="opt">It images cells and measures gene activity visually</button>
+      <div class="expl"><b>Correct.</b> Four steps for bulk RNA-seq: DNA contains genes → genes transcribed to mRNA → RNA-seq sequences many RNA molecules → output is a count table. scRNA-seq adds: dissociate into individual cells, capture one cell per droplet/well, add <b>cell barcodes</b> (each cell gets a unique tag), sequence the pooled library, and build a <b>gene × cell</b> count matrix. Higher counts mean more detected transcripts, not direct absolute abundance.</div>
+    </div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Concept</span><span>Q·3</span></div>
+    <div class="quiz-body">
+      <p class="qq">What can we learn from scRNA-seq data? (the five uses in the slides)</p>
+      <button class="opt" data-correct>Identify cell types &amp; diversity; characterize cell states; discover markers/pathways; compare conditions (disease, treatment, time); infer trajectories, cell–cell communication and predict treatment response</button>
+      <button class="opt">Only count how many cells are in the sample</button>
+      <button class="opt">Determine the DNA sequence of each cell</button>
+      <button class="opt">Measure protein concentrations directly</button>
+      <div class="expl"><b>Correct.</b> From a UMAP with clusters (which cell types exist?), to continua of states (activation/differentiation), to marker heatmaps (which genes define a type), to healthy-vs-diseased comparisons, to trajectories and sender–receiver communication, all the way to responder-vs-resistant prediction. One measurement type, a whole analysis pipeline — which is why a good <i>representation</i> (scVI, scGPT) is so valuable.</div>
+    </div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·4</span></div>
+    <div class="quiz-body">
+      <p class="qq">What are key characteristics of single-cell RNA-seq data that scVI deals with?</p>
+      <button class="opt" data-correct>Sparsity/dropout (most genes read 0), varying sequencing depth (library size 1.2K vs 22K UMIs), batch effects, transcriptional noise, and datasets growing to millions of cells</button>
+      <button class="opt">Balanced class sizes and Gaussian-distributed expression</button>
+      <button class="opt">Perfect measurements with no technical variability</button>
+      <button class="opt">Only a handful of genes, measured exactly</button>
+      <div class="expl"><b>Correct.</b> The five challenges the lecture lists: (1) <b>sparsity</b> — only a fraction of a cell's transcripts are detected, so most counts are 0; (2) <b>sequencing depth</b> — total counts vary wildly between cells (Cell X ~1,242 UMIs vs Cell Y ~22,387); (3) <b>batch effects</b> — same cell types separate by processing batch, not biology; (4) <b>transcriptional noise</b> — the same gene varies stochastically across similar cells; (5) <b>scale</b> — from 10² to 10⁶–10⁷ cells. Each maps to a scVI design choice: ZINB likelihood, size-factor variable, batch covariate, probabilistic posterior, amortized inference.</div>
+    </div>
+  </div>
+
+  <h3 style="font-family:'Ibarra Real Nova',serif;margin:1.6rem 0 .4rem">scVI</h3>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·5</span></div>
+    <div class="quiz-body">
+      <p class="qq">Which architecture best describes the core of scVI? And what are the main components and their roles?</p>
+      <button class="opt" data-correct>A variational autoencoder: encoder NNs map counts + batch to distributions over latent state z and library size l; sample from them; decoder NNs produce the parameters of a ZINB count distribution per gene; downstream tasks read out z (clustering, visualization, batch removal) or expected counts (imputation, DE)</button>
+      <button class="opt">A convolutional neural network treating the count matrix as an image</button>
+      <button class="opt">A transformer with genes as tokens</button>
+      <button class="opt">A random forest over per-gene statistics</button>
+      <div class="expl"><b>Correct.</b> The slide's five blocks: (a) raw expression + batch ID in; (b) <b>variational posterior</b> q(z,l | x,s) via NN1–NN4 outputs mean/s.d. for the size factor and the latent space; (c) <b>sampling</b> of l (depth), z (cell state), s (batch); (d) <b>generative model</b> p(x | z,s,l) via NN5–NN6 gives expected frequency, expected dropout, and cell-specific scaling → expected counts; (e) downstream tasks. Key framing: <i>z</i> = biology, <i>l</i> = depth, <i>s</i> = batch — three separate variables so biology can be separated from technique.</div>
+    </div>
+  </div>
+
+  <figure>
+    <img src="figs/discussion/5b4e774d63e0e0ed73801a9247755e5f_img.jpg" alt="scVI architecture from the lecture: encoder, variational posterior, sampling, generative model, downstream tasks" loading="lazy">
+    <figcaption>The scVI architecture as drawn in the discussion session — the same generative story as the paper's Fig 1.</figcaption>
+  </figure>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·6</span></div>
+    <div class="quiz-body">
+      <p class="qq">What is the main training objective in scVI?</p>
+      <button class="opt" data-correct>The ELBO: an expected log-likelihood (reconstruction — how probable are the observed counts under the predicted ZINB?) minus a KL term (keeping the posterior q(z,l | x,s) close to its prior, for a smooth latent space)</button>
+      <button class="opt">Cross-entropy on predicted cell-type labels</button>
+      <button class="opt">Mean squared error between raw and reconstructed counts</button>
+      <button class="opt">A pairwise ranking loss between cells of the same type</button>
+      <div class="expl"><b>Correct.</b> ELBO<sub>n</sub> = E<sub>q</sub>[log p(x<sub>n</sub><sup>obs</sup> | z<sub>n</sub>, l<sub>n</sub>, s<sub>n</sub>)] − KL(q ∥ p). Term 1 scores the counts under the ZINB parameters (μ mean, θ dispersion, π dropout) the decoder produced. Term 2 regularizes: posteriors stay near the prior so the latent space stays smooth and comparable across cells. Sampling uses the <b>reparameterization trick</b> so gradients flow through the sampling step.</div>
+    </div>
+  </div>
+
+  <figure>
+    <img src="figs/discussion/4e4be0bd8b235167902f2c03e41da651_img.jpg" alt="ELBO objective diagram: observed data, encoder, sampling, decoder, ZINB likelihood" loading="lazy">
+    <figcaption>The ELBO as a pipeline: counts → encoder → sample z,l → decoder → ZINB parameters → likelihood of the observed counts.</figcaption>
+  </figure>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Concept</span><span>Q·7</span></div>
+    <div class="quiz-body">
+      <p class="qq">What are advantages and limitations of scVI?</p>
+      <button class="opt" data-correct>Advantages: count-aware probabilistic model, uncertainty via posteriors, separates biology/depth/batch, scalable via amortized inference. Limitations: latent ≠ interpretable biology, depends on distributional assumptions, batch correction can fail or remove real signal when batch and biology are confounded, and it is not causal — it does not predict unseen perturbations</button>
+      <button class="opt">Advantage: it predicts drug responses out of the box; limitation: none</button>
+      <button class="opt">Advantage: needs no data; limitation: only works on 100 cells</button>
+      <button class="opt">Advantage: exact closed-form posterior; limitation: linear decoder only</button>
+      <div class="expl"><b>Correct.</b> The lecture's own list. The last limitation matters most for the lecture arc: scVI <i>represents</i> observed variation, it does not answer "what if we knock out gene X?" — that's what motivates CPA and GEARS. And the batch caveat is a recurring exam trap: if batch correlates with a real biological condition, correcting for batch can delete the biology.</div>
+    </div>
+  </div>
+
+  <h3 style="font-family:'Ibarra Real Nova',serif;margin:1.6rem 0 .4rem">scGPT</h3>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Concept</span><span>Q·8</span></div>
+    <div class="quiz-body">
+      <p class="qq">Why use transformer-based foundation models for scRNA-seq data?</p>
+      <button class="opt" data-correct>Scale (use huge cell collections instead of training per-task), reuse (one general representation for many downstream tasks), and context-dependent representations (a gene's meaning depends on the other genes expressed in the same cell)</button>
+      <button class="opt">Because transformers require less data than scVI</button>
+      <button class="opt">Because transformers can only process sequential data</button>
+      <button class="opt">Because transformers remove batch effects by construction</button>
+      <div class="expl"><b>Correct.</b> Three reasons from the slides. The third is the deep one: in a VAE each cell gets a fixed embedding, but a transformer computes <i>contextual</i> representations — TP53's embedding in a T cell differs from TP53's in a cancer cell, because attention mixes information from all genes present. That is a genuinely different kind of representation.</div>
+    </div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll · select all</span><span>Q·9</span></div>
+    <div class="quiz-body">
+      <p class="qq">How can we adapt Transformers to scRNA-seq? What makes it non-trivial?</p>
+      <button class="opt" data-correct>Genes as tokens + expression values as token features. Non-trivial because: (1) a transcriptome is non-sequential — a bag-of-genes with no word order — and (2) tokens carry continuous quantitative values, not discrete categories</button>
+      <button class="opt">Order genes alphabetically so the sequence has meaning</button>
+      <button class="opt">Round expression to present/absent and discard the values</button>
+      <button class="opt">Transformers cannot be applied to non-sequential data at all</button>
+      <div class="expl"><b>Correct.</b> Two mismatches with language: text tokens flow in a strict order that dictates meaning, while a cell's genes are expressed <i>simultaneously</i> with no inherent order; and a word is either present or absent, while every gene token has a continuous abundance. scGPT's answer: no positional/sequence assumption between genes, and expression values are binned and embedded as a value embedding added to the gene embedding.</div>
+    </div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·10</span></div>
+    <div class="quiz-body">
+      <p class="qq">How is a cell converted into tokens in scGPT?</p>
+      <button class="opt" data-correct>Each gene becomes a token combining three embeddings: gene identity (which gene), expression value (discretized into a bin), and an optional condition token (batch, perturbation, modality). Input for token i: h_i = emb_g(g_i) + emb_x(x_i) + emb_c(c_i)</button>
+      <button class="opt">Each cell is one token; genes are the vocabulary positions</button>
+      <button class="opt">Genes are split into subwords like BPE tokenization</button>
+      <button class="opt">Only the 10 most expressed genes become tokens</button>
+      <div class="expl"><b>Correct.</b> Direct analogy to Lecture 1: sentence → word tokens is cell → gene tokens. TP53 with expression bin 3 and condition "disease" contributes emb(TP53) + emb(3) + emb(disease). A special &lt;cls&gt;/cell token summarizes the whole cell. Note the contrast with the HVG baseline: here <i>all</i> genes are potentially in the context, not just the 2000 most variable.</div>
+    </div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·11</span></div>
+    <div class="quiz-body">
+      <p class="qq">How can scGPT learn context between genes?</p>
+      <button class="opt" data-correct>Masked-value pretraining: hide the expression of some target genes, and train the transformer to predict those values from the cell token, the known genes, and each target's own gene ID — via a generative attention mask where targets cannot attend to each other</button>
+      <button class="opt">Causal left-to-right masking exactly like GPT predicting the next word</button>
+      <button class="opt">There is no training objective; context comes from the architecture alone</button>
+      <button class="opt">By attending only between neighboring genes on the chromosome</button>
+      <div class="expl"><b>Correct.</b> Language models use a causal mask (token i attends only to tokens before it) to predict the next word. scGPT instead <b>masks expression values</b>: to predict MYC, the model attends to the cell token, the known genes (TP53, EGFR, CD3D), and MYC's own gene ID — but <i>not</i> to other masked targets like GATA3. This forces context to come from co-expression within the cell, which is exactly the "context between genes" the lecture wants.</div>
+    </div>
+  </div>
+
+  <figure>
+    <img src="figs/discussion/356ab6a9298284115a7334b1b56d59e2_img.jpg" alt="scGPT generative attention mask: known genes attend freely, masked targets attend only to known genes and themselves" loading="lazy">
+    <figcaption>The generative attention mask during scGPT training: known genes attend freely; each masked target sees known genes + its own ID, but not the other targets.</figcaption>
+  </figure>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Concept</span><span>Q·12</span></div>
+    <div class="quiz-body">
+      <p class="qq">After pretraining, what representations can we extract — and which for which question?</p>
+      <button class="opt" data-correct>A cell representation h_cell (whole-cell vector) for cell-level tasks (annotation, clustering, integration), and contextual gene representations h_g (e.g. h_TP53) for gene-level questions — the same gene gets different representations in different cellular contexts</button>
+      <button class="opt">Only a single genome-wide average vector</button>
+      <button class="opt">Protein structures per gene</button>
+      <button class="opt">One fixed embedding per gene, identical in every cell</button>
+      <div class="expl"><b>Correct.</b> The lecture's slide 5–6: h_TP53<sup>(T cell)</sup> ≠ h_TP53<sup>(cancer cell)</sup> — same gene, different context, different representation. Rule of thumb: cell-level question → h_cell; gene-level question → h_gene. This contextual property is the concrete promise of foundation models over a plain VAE.</div>
+    </div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Concept</span><span>Q·13</span></div>
+    <div class="quiz-body">
+      <p class="qq">How is the pretrained scGPT adapted for downstream tasks?</p>
+      <button class="opt" data-correct>Initialize from the pretrained weights, attach a task-specific head, and fine-tune on task-specific data/objective — for cell annotation, data integration, perturbation response, gene network inference</button>
+      <button class="opt">It cannot be changed; tasks are solved zero-shot by design</button>
+      <button class="opt">Each task trains a brand-new transformer from scratch</button>
+      <button class="opt">Only the last layer of gene embeddings may ever be modified</button>
+      <div class="expl"><b>Correct.</b> "Pretrain once at scale → adapt the same model to different biological tasks." The pattern is BERT/GPT-style: frozen-or-tuned backbone + task head. Note what the lecture is setting up: all headline scGPT results are <i>fine-tuned</i> — the zero-shot stress test comes in the next paper.</div>
+    </div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·14</span></div>
+    <div class="quiz-body">
+      <p class="qq">Which result would provide the strongest evidence that scGPT has learned a transferable foundation-model representation?</p>
+      <button class="opt" data-correct>Strong zero-shot (or few-shot) performance that transfers across datasets and biological contexts, works for multiple tasks, and beats non-pretrained baselines — without fine-tuning</button>
+      <button class="opt">High accuracy on the same dataset after full fine-tuning</button>
+      <button class="opt">A large number of transformer parameters</button>
+      <button class="opt">Low training loss on the 33M pretraining cells</button>
+      <div class="expl"><b>Correct.</b> The four evidence types from the slides: transfer across datasets/contexts, usefulness across multiple tasks, strong zero/few-shot performance, improvement over non-pretrained baselines. Fine-tuning tests "is pretraining a good starting point?"; zero-shot tests "does the representation itself transfer?". The second is the foundation-model claim — and the first, via fine-tuning, is all scGPT's paper shows.</div>
+    </div>
+  </div>
+
+  <figure>
+    <img src="figs/discussion/043e64d41a3368d138ace3816fd26469_img.jpg" alt="From pretrained scGPT to downstream tasks: pretrained transformer, task-specific head, fine-tuning" loading="lazy">
+    <figcaption>Pretrain once at scale, adapt with a task head: the scGPT transfer workflow.</figcaption>
+  </figure>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Concept</span><span>Q·15</span></div>
+    <div class="quiz-body">
+      <p class="qq">What should a good single-cell embedding preserve, and what should it be invariant to? And what did the zero-shot evaluation find?</p>
+      <button class="opt" data-correct>Preserve biology (cell-type separability, neighborhood purity, known structure) while being invariant to batch (mixing within populations). The zero-shot finding: foundation-model embeddings capture biological structure but are NOT consistently superior to HVG, Harmony or scVI, and batch effects remain a challenge</button>
+      <button class="opt">Preserve batch structure and vary with sequencing depth</button>
+      <button class="opt">Preserve nothing; embeddings are arbitrary</button>
+      <button class="opt">It found scGPT zero-shot beats every baseline on every dataset</button>
+      <div class="expl"><b>Correct.</b> The lecture's AvgBIO/avg-batch tables: scVI (0.81/0.86 on pancreas) and Harmony beat Geneformer (0.26/0.30) and often scGPT (0.44/0.43). Moral: <i>large-scale pretraining does not automatically produce a better off-the-shelf representation</i> — strong simple baselines are essential, and "strong after fine-tuning" and "strong zero-shot" are different claims.</div>
+    </div>
+  </div>
+
+  <h3 style="font-family:'Ibarra Real Nova',serif;margin:1.6rem 0 .4rem">CPA</h3>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Concept</span><span>Q·16</span></div>
+    <div class="quiz-body">
+      <p class="qq">Why predict perturbation responses from single-cell data — and why is it difficult?</p>
+      <button class="opt" data-correct>Matters because the drug/target/dose/combination space is too large to test experimentally. Difficult because scRNA-seq is destructive: the cell is lysed during measurement, so we can never observe the same cell before and after treatment — control and treated conditions contain different cells. Prediction is inherently counterfactual</button>
+      <button class="opt">It's easy: just measure the same cell twice</button>
+      <button class="opt">Difficult only because of computer storage limits</button>
+      <button class="opt">Matters only for budgeting lab equipment</button>
+      <div class="expl"><b>Correct.</b> The measurement destroys the cell — no before/after on the same cell, ever. So "what would THIS cell have looked like under another treatment?" is a counterfactual question that must be answered by models, not by paired observation. That is the conceptual gap CPA is built to fill.</div>
+    </div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Concept</span><span>Q·17</span></div>
+    <div class="quiz-body">
+      <p class="qq">What determines perturbation response, and how does CPA encode it?</p>
+      <button class="opt" data-correct>Baseline state, perturbation identity, dose, cell type/covariates, and combinations. CPA disentangles them: a basal latent state from an encoder, plus separate perturbation, dose and covariate embeddings combined (z + f₁(d₁) + f₂(d₂) + c…) before decoding</button>
+      <button class="opt">Only the drug's chemical formula, nothing else</button>
+      <button class="opt">Only the cell type, all other factors are noise</button>
+      <button class="opt">Nothing; responses are random</button>
+      <div class="expl"><b>Correct.</b> The five factors from the slide map one-to-one onto CPA's latent pieces. Disentanglement is what buys <i>in silico</i> counterfactuals: keep the basal state fixed, swap the perturbation/dose embedding, decode — and you have a predicted treated state for a condition never measured.</div>
+    </div>
+  </div>
+
+  <figure>
+    <img src="figs/discussion/4ae4505e885586e481a3ad3bff5198b7_img.jpg" alt="CPA adversarial disentanglement: discriminators try to predict perturbation and covariates from the basal state" loading="lazy">
+    <figcaption>Adversarial disentanglement in CPA: discriminators fail to read treatment out of the basal state, so the basal state stays treatment-free.</figcaption>
+  </figure>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·18</span></div>
+    <div class="quiz-body">
+      <p class="qq">How does CPA prevent the basal state from encoding treatment?</p>
+      <button class="opt" data-correct>Adversarial disentanglement: a discriminator tries to predict the perturbation (and covariates) from the basal latent state; the encoder is trained to make that prediction fail — so treatment information lives only in the explicit perturbation embeddings, which are added back before decoding</button>
+      <button class="opt">It deletes drug-related genes from the input data</button>
+      <button class="opt">The basal state is copied from the treated cells directly</button>
+      <button class="opt">It uses a much smaller latent space so nothing fits</button>
+      <div class="expl"><b>Correct.</b> Encoder → z basal; discriminator predicts perturbation/covariates from z; encoder trained adversarially to defeat it. If treatment info is needed for reconstruction, it must flow through the explicit perturbation embedding — which is what makes swapping perturbations in silico valid. Without this, the "basal" state would leak the treatment and the counterfactual would be circular.</div>
+    </div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·19</span></div>
+    <div class="quiz-body">
+      <p class="qq">What can CPA generalize to — and what not?</p>
+      <button class="opt" data-correct>Can: new drug combinations of individually-seen drugs, known drugs in new cellular contexts, unseen doses — new combinations of separately-observed factors. Cannot: completely unseen perturbations, never-seen cell types, or synergy in combinations never co-perturbed in training</button>
+      <button class="opt">Can generalize to any unseen perturbation thanks to the adversarial decoder</button>
+      <button class="opt">Can only predict the training data back exactly</button>
+      <button class="opt">Cannot generalize at all, even to new doses</button>
+      <div class="expl"><b>Correct.</b> The boundary is precise: CPA <i>recombines</i> learned factor embeddings. An unseen perturbation has no learned embedding, so there is nothing to compose — that's the gap GEARS fills with prior biological graphs. And synergy can only be predicted if the model saw that combination (or enough combinatorial data) during training.</div>
+    </div>
+  </div>
+
+  <h3 style="font-family:'Ibarra Real Nova',serif;margin:1.6rem 0 .4rem">GEARS</h3>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·20</span></div>
+    <div class="quiz-body">
+      <p class="qq">What allows GEARS to represent a perturbation never seen during training? (i.e. what prior knowledge does it use?)</p>
+      <button class="opt" data-correct>Two biological prior graphs: a gene co-expression graph (edges between genes with high |Pearson| co-expression) and a GO-derived perturbation graph (edges between genes with similar Gene Ontology annotations, Jaccard overlap) — GNNs spread embedding information from seen to unseen genes through these edges</button>
+      <button class="opt">A lookup table of all possible perturbations</button>
+      <button class="opt">Chemical fingerprints of the drugs</button>
+      <button class="opt">Larger batch sizes during training</button>
+      <div class="expl"><b>Correct.</b> Two intuitions → two graphs: (i) genes with similar expression patterns should respond similarly to perturbations → co-expression graph; (ii) genes in similar pathways should impact similar downstream genes → GO graph. An unseen gene sits near seen ones in these graphs, so its perturbation embedding can be <i>inferred</i> rather than learned from data. GEARS is the lecture's bet on <i>biological priors over data scale</i>.</div>
+    </div>
+  </div>
+
+  <figure>
+    <img src="figs/discussion/fb4274c4b7882a4059103f1dbca9b111_img.jpg" alt="GEARS architecture: embeddings, two relationship graphs, composition operator, cross-gene MLP, prediction" loading="lazy">
+    <figcaption>GEARS end to end: gene + perturbation embeddings → two GNNs over the co-expression and GO graphs → composition → cross-gene effects → predicted post-perturbation expression.</figcaption>
+  </figure>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Concept</span><span>Q·21</span></div>
+    <div class="quiz-body">
+      <p class="qq">How is GEARS trained?</p>
+      <button class="opt" data-correct>Input: control expression + perturbation set. Predict post-perturbation expression; train against the measured perturbed expression with a loss comparing them — plus an autofocus direction-aware loss that upweights genes with large perturbation-induced changes, since standard MSE is dominated by the many barely-changing genes</button>
+      <button class="opt">It predicts cell-type labels with cross-entropy</button>
+      <button class="opt">It is trained only on double perturbations</button>
+      <button class="opt">It reconstructs the control profile, ignoring the perturbation</button>
+      <div class="expl"><b>Correct.</b> Note the design subtlety: most genes barely change after a perturbation, so plain MSE learns "predict control" — exactly the failure mode of the foundation models in paper 06. The <b>autofocus</b> loss reweights toward informative, direction-consistent changes: the same insight the baselines paper formalizes.</div>
+    </div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·22</span></div>
+    <div class="quiz-body">
+      <p class="qq">What can GEARS generalize to — and what are its limitations?</p>
+      <button class="opt" data-correct>Can: effects of genes never perturbed in training, new combinations including unseen genes, via prior graphs. Cannot/not designed for: new cell types or cross-cell-type transfer; combination prediction still benefits from combinatorial training data; performance depends on the quality and relevance of the prior graphs</button>
+      <button class="opt">Can generalize to any cell type and organism</button>
+      <button class="opt">Cannot predict anything outside the training perturbations</button>
+      <button class="opt">Works only for drugs, never for genetic perturbations</button>
+      <div class="expl"><b>Correct.</b> The graphs must be informative for the <i>right</i> biology: if the unseen gene's GO neighborhood behaves differently in the test context, the transfer fails. Priors enable extrapolation but also import the priors' blind spots — a fair critique when comparing against pure-data approaches.</div>
+    </div>
+  </div>
+
+  <h3 style="font-family:'Ibarra Real Nova',serif;margin:1.6rem 0 .4rem">Benchmarking — the reality check</h3>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Concept</span><span>Q·23</span></div>
+    <div class="quiz-body">
+      <p class="qq">How can we tell whether a complex perturbation model really learns something beyond simple patterns?</p>
+      <button class="opt" data-correct>Benchmark against strong simple baselines on the same data/splits/metrics, and test the model's specific generalization claim: for unseen combinations, compare against the additive baseline (yᴬ + yᴮ − y∅); for unseen perturbations, against mean and linear predictors</button>
+      <button class="opt">Check that the model has the most parameters</button>
+      <button class="opt">Evaluate only on training data with a low loss</button>
+      <button class="opt">Compare against other deep learning models only</button>
+      <div class="expl"><b>Correct.</b> "Different generalisation claims require different baselines." Task 1 (unseen doubles): does the model beat <i>additivity</i>, i.e. predict non-additive structure? Task 2 (unseen single perturbations): does it beat <i>mean/linear</i> predictors at extrapolating to a new perturbation identity? A complex model that only matches the matching simple baseline has proven nothing.</div>
+    </div>
+  </div>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·24</span></div>
+    <div class="quiz-body">
+      <p class="qq">What is the best simple baseline for predicting an unseen combination of two perturbations?</p>
+      <button class="opt" data-correct>The additive baseline: predict ŷ^(A+B) = yᴬ + yᴮ − y∅ — add the two measured single-perturbation profiles on top of control. It uses no double-perturbation data and is remarkably hard to beat</button>
+      <button class="opt">Predict the average of all training profiles</button>
+      <button class="opt">Predict the control profile unchanged (no change)</button>
+      <button class="opt">Randomly sample an expression profile</button>
+      <div class="expl"><b>Correct.</b> In the lecture's violin plot, the additive baseline (median L2 ≈ 2.5) beats every foundation model (≈ 3.5–4.5) and both GEARS (≈ 4.0) and CPA (≈ 11.5); "no change" (≈ 5.5) is worse than additive but still beats most DL models. So if a model claims synergy, it must first beat additivity — most don't.</div>
+    </div>
+  </div>
+
+  <figure>
+    <img src="figs/discussion/509a054727400bc6d424bb2a559b8cfc_img.jpg" alt="Double perturbation benchmark violin plot: additive baseline beats all foundation and deep learning models" loading="lazy">
+    <figcaption>Unseen double perturbations: the additive baseline's median error beats every foundation model, GEARS and CPA. From the discussion slides (Ahlmann-Eltze et al. data).</figcaption>
+  </figure>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Menti poll</span><span>Q·25</span></div>
+    <div class="quiz-body">
+      <p class="qq">What is the best simple baseline for predicting a completely unseen perturbation?</p>
+      <button class="opt" data-correct>A linear model: Ŷ = G·W·Pᵀ + b — read-out gene embeddings × perturbation gene embeddings through one learned linear map (plus a mean-profile baseline as the floor). No neural decoder needed, and it matches or beats scGPT, GEARS and the other foundation models</button>
+      <button class="opt">A 12-layer transformer fine-tuned on the test perturbations</button>
+      <button class="opt">The additive baseline, since all effects are additive</button>
+      <button class="opt">There is no baseline possible for unseen perturbations</button>
+      <div class="expl"><b>Correct.</b> For held-out single perturbations (Replogle K562/RPE1), a linear model on gene/perturbation embeddings performs on par with or better than the deep models — the deep models cluster near the plain <i>mean</i> baseline. Devastating and clarifying: the <i>embeddings</i> carry some signal; the neural machinery on top adds little for this task.</div>
+    </div>
+  </div>
+
+  <figure>
+    <img src="figs/discussion/835ebc0e9ec15eea8eadc15448249226_img.jpg" alt="Unseen perturbation benchmark: linear model matches or beats foundation models on Replogle K562" loading="lazy">
+    <figcaption>Unseen single perturbations (Replogle K562): foundation models and GEARS sit near the mean baseline; the linear model competes with the best. From the discussion slides.</figcaption>
+  </figure>
+
+  <div class="quiz" data-quiz>
+    <div class="quiz-head"><span>Synthesis</span><span>Q·26</span></div>
+    <div class="quiz-body">
+      <p class="qq">How should we benchmark perturbation models? (the five rules from the closing slides)</p>
+      <button class="opt" data-correct>Use strong simple baselines; match the metric to the biological question; check the metric can distinguish meaningful predictions from null ones; benchmark the actual generalization claim (state what's held out); test robustness across datasets and splits</button>
+      <button class="opt">Use only leaderboard accuracy on one dataset</button>
+      <button class="opt">Always prefer the model with the lowest training loss</button>
+      <button class="opt">Avoid baselines; they waste compute</button>
+      <div class="expl"><b>Correct.</b> The lecture's closing benchmarking principles (Ahlmann-Eltze 2025; Systema/Nat Biotech 2025; Miller 2025; Saez-Rodriguez 2026). The takeaways tie the whole lecture: different models solve different generalization problems; simple biological structure goes a long way; complex models earn their keep only when they capture what simple models miss; more complexity means more data demands; biological priors help extrapolation — if the prior is informative.</div>
     </div>
   </div>
 </section>
